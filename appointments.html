@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book an Appointment - MindMate</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary navigation">
+      <h1>MindMate</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="self-check.html">Self-Check</a></li>
+        <li><a href="appointments.html" class="active" aria-current="page">Appointments</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button id="hamburger" aria-label="Toggle navigation menu">☰</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="booking-intro">
+      <img 
+        src="images/calendar-schedule-list.jpg" 
+        alt="Booking a session illustration" 
+        class="booking-image" 
+        loading="lazy" 
+        width="400" 
+        height="250"
+      />
+      <div>
+        <h2>Book a Session</h2>
+        <p>Find time with a licensed therapist or wellness coach. All sessions are private and confidential.</p>
+      </div>
+    </section>
+
+    <section class="booking-form" aria-labelledby="booking-form-title">
+      <button id="google-auth-btn" type="button" style="margin-bottom:1rem;">Sign in with Google</button>
+      <h2 id="booking-form-title" class="visually-hidden">Appointment Booking Form</h2>
+      <form action="#" method="POST" novalidate>
+        <label for="fullname">Full Name</label>
+        <input type="text" id="fullname" name="fullname" required autocomplete="name" />
+
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          placeholder="you@example.com" 
+          required 
+          autocomplete="email"
+          pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+          title="Please enter a valid email address"
+        />
+
+        <label for="type">Type of Session</label>
+        <select id="type" name="type">
+          <option value="therapy">Therapy</option>
+          <option value="counseling">Counseling</option>
+          <option value="nutrition">Nutrition Support</option>
+        </select>
+
+        <label for="date">Preferred Date</label>
+        <input type="date" id="date" name="date" required />
+
+        <label for="time">Preferred Time</label>
+        <input type="time" id="time" name="time" required />
+
+        <label for="notes">Additional Notes</label>
+        <textarea 
+          id="notes" 
+          name="notes" 
+          rows="4" 
+          placeholder="Let us know anything important..."
+        ></textarea>
+
+        <button type="submit">Book Appointment</button>
+        <div id="booking-message" role="alert" aria-live="polite" style="margin-top:1rem;"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MindMate. All rights reserved.</p>
+  </footer>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/appointment.js" defer></script>
+</body>
+</html>

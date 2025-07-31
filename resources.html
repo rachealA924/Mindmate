@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resources - MindMate</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary navigation">
+      <h1>MindMate</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="resources.html" class="active" aria-current="page">Resources</a></li>
+        <li><a href="self-check.html">Self-Check</a></li>
+        <li><a href="appointments.html">Appointments</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button id="hamburger" aria-label="Toggle navigation menu">☰</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="articles" aria-labelledby="articles-title">
+      <h2 id="articles-title">Articles & Guides</h2>
+      <p>Explore our curated articles and guides to help you navigate mental health challenges, improve your well-being, and find support.</p>
+      <div class="article-list">
+        <article class="article-card">
+          <img 
+            src="images/anxiety guide.jpg" 
+            alt="Anxiety Guide illustration" 
+            loading="lazy" 
+            width="300" 
+            height="180" 
+          />
+          <h3>Understanding Anxiety</h3>
+          <p>Learn how anxiety manifests, how to manage it, and when to seek professional help.</p>
+          <a href="#" aria-label="Read more about Understanding Anxiety">Read more</a>
+        </article>
+
+        <article class="article-card">
+          <img 
+            src="images/nutrition and mental health.jpg" 
+            alt="Nutrition and Mental Health illustration" 
+            loading="lazy" 
+            width="300" 
+            height="180" 
+          />
+          <h3>Nutrition & Mental Health</h3>
+          <p>Explore how what you eat can influence your mood, focus, and mental clarity.</p>
+          <a href="#" aria-label="Read more about Nutrition & Mental Health">Read more</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="motivational-quotes" aria-label="Motivational quotes">
+      <h2>Daily Motivation</h2>
+      <blockquote cite="https://www.goodreads.com/quotes/448126-you-don-t-have-to-control-your-thoughts-you-just">
+        “You don’t have to control your thoughts. You just have to stop letting them control you.” – Dan Millman
+      </blockquote>
+      <blockquote cite="https://www.brainyquote.com/quotes/mariska_hargitay_536706">
+        “Healing takes time, and asking for help is a courageous step.” – Mariska Hargitay
+      </blockquote>
+      <blockquote>
+        “You are enough, exactly as you are.”
+      </blockquote>
+    </section>
+
+    <section class="feeling-lost" aria-labelledby="self-check-title">
+      <h2 id="self-check-title">Not sure how you're feeling?</h2>
+      <p>Take a quick emotional self-check quiz or explore our guide to help you identify what you're going through.</p>
+      <a href="self-check.html" class="btn-primary">Start Self Check</a>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MindMate. All rights reserved.</p>
+  </footer>
+  <script src="js/main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MindMate - Your Mental Health Companion</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary navigation">
+      <h1>MindMate</h1>
+      <ul>
+        <li><a href="index.html" class="active" aria-current="page">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="self-check.html">Self-Check</a></li>
+        <li><a href="appointments.html">Appointments</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button id="hamburger" aria-label="Toggle navigation menu">☰</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section class="hero" aria-label="Welcome message and introduction">
+      <img 
+        src="images/mindmate 2.jpg" 
+        alt="Mental wellness" 
+        class="hero-img" 
+        loading="lazy"
+        width="600"
+        height="400"
+      />
+      <div>
+        <h2>Welcome to MindMate</h2>
+        <p>Your safe space to understand and improve your mental health. Get support, learn, and connect with certified professionals.</p>
+      </div>
+    </section>
+
+    <!-- QUOTE SECTION -->
+    <section class="quote-section" aria-label="Daily motivational quote">
+      <h3>💬 Daily Motivation</h3>
+      <div id="quote-box" role="contentinfo" aria-live="polite">Loading inspiring quote...</div>
+    </section>
+
+    <!-- EMOTION CHECK -->
+    <section class="emotion-check" aria-label="Emotion check introduction">
+      <h3>Not Sure What You're Feeling?</h3>
+      <img 
+        src="images/Emoji Satisfaction Meter Gradient.jpg" 
+        alt="Emotion check illustration" 
+        class="emotion-img" 
+        loading="lazy"
+        width="280"
+        height="auto"
+      />
+      <p>Explore our guided self-assessment to better understand what you're going through.</p>
+      <a href="resources.html" class="btn">Explore Feelings</a>
+    </section>
+
+    <!-- BOOKING SECTION -->
+    <section class="booking" aria-label="Book a therapy session">
+      <h3>Book a One-on-One Session</h3>
+      <p>Match with a therapist based on your needs, availability, and preferences.</p>
+      <a href="appointments.html" class="btn">Find a Therapist</a>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="testimonials" aria-label="User testimonials">
+      <h3>What People Say</h3>
+
+      <article class="testimonial">
+        <img 
+          src="images/amina kigali.jpg" 
+          alt="Happy user Amina from Kigali" 
+          loading="lazy"
+          width="80"
+          height="80"
+        />
+        <blockquote>“MindMate helped me take my first step to healing. I felt heard and understood.” – Amina, Kigali</blockquote>
+      </article>
+
+      <article class="testimonial">
+        <img 
+          src="images/john nairobi.jpg" 
+          alt="Smiling user John from Nairobi" 
+          loading="lazy"
+          width="80"
+          height="80"
+        />
+        <blockquote>“I found a therapist I connect with, and I’ve learned to manage my anxiety.” – John, Nairobi</blockquote>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MindMate. All rights reserved.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/quote.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Emotional Self Check - MindMate</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary navigation">
+      <h1>MindMate</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="self-check.html" class="active" aria-current="page">Self-Check</a></li>
+        <li><a href="appointments.html">Appointments</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button id="hamburger" aria-label="Toggle navigation menu">☰</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
+
+  <main class="self-check" role="main">
+    <section aria-labelledby="self-check-title">
+      <h2 id="self-check-title">Quick Emotional Self-Check</h2>
+      <p>Answer a few questions to get insight into how you're feeling today.</p>
+
+      <form id="self-check-form" aria-describedby="self-check-instructions">
+        <div class="question">
+          <label for="mood-select">1. How are you feeling right now?</label><br />
+          <select id="mood-select" name="mood" required>
+            <option value="">-- Choose --</option>
+            <option value="stressed">Stressed</option>
+            <option value="anxious">Anxious</option>
+            <option value="down">Sad / Low</option>
+            <option value="okay">Okay</option>
+            <option value="good">Good / Uplifted</option>
+          </select>
+        </div>
+
+        <fieldset>
+          <legend>2. Have you been sleeping well lately?</legend>
+          <label><input type="radio" name="sleep" value="yes" required /> Yes</label>
+          <label><input type="radio" name="sleep" value="no" /> No</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Do you feel supported emotionally?</legend>
+          <label><input type="radio" name="support" value="yes" required /> Yes</label>
+          <label><input type="radio" name="support" value="no" /> No</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>4. Are you finding it hard to focus?</legend>
+          <label><input type="radio" name="focus" value="yes" required /> Yes</label>
+          <label><input type="radio" name="focus" value="no" /> No</label>
+        </fieldset>
+
+        <button type="submit">Get Insight</button>
+      </form>
+
+      <div id="result" class="result-box hidden" role="region" aria-live="polite"></div>
+      <button id="reset-check" style="display:none;">Reset</button>
+    </section>
+
+    <section aria-labelledby="mood-analysis-title" class="mood-analysis">
+      <h2 id="mood-analysis-title">Mood Text Analysis</h2>
+      <form id="mood-form">
+        <label for="mood-input">How are you feeling today?</label>
+        <textarea 
+          id="mood-input" 
+          rows="4" 
+          placeholder="Write anything you'd like..." 
+          required
+          aria-required="true"
+        ></textarea>
+        <button type="submit">Analyze Mood</button>
+      </form>
+
+      <div id="mood-result" role="region" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MindMate. All rights reserved.</p>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+  <script src="js/self-check.js" defer></script>
+  <script src="js/sentiment.js" defer></script>
+</body>
+</html>

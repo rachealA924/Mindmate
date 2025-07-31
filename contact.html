@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact Us - MindMate</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary navigation">
+      <h1>MindMate</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="self-check.html">Self-Check</a></li>
+        <li><a href="appointments.html">Appointments</a></li>
+        <li><a href="contact.html" class="active" aria-current="page">Contact</a></li>
+      </ul>
+      <button id="hamburger" aria-label="Toggle navigation menu">☰</button>
+      <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="contact-intro" aria-label="Contact introduction">
+      <img 
+        src="images/contact us.jpg" 
+        alt="Contact us" 
+        class="contact-image" 
+        loading="lazy"
+        width="600"
+        height="400"
+      />
+      <div>
+        <h2>We’d Love to Hear From You</h2>
+        <p>Have a question, feedback, or just want to share something? Reach out below.</p>
+      </div>
+    </section>
+
+    <section class="contact-form" aria-label="Contact form">
+             <form action="https://formspree.io/f/xnnzzgnn" method="POST">
+         <input type="hidden" name="_next" value="https://mindmate.vercel.app/contact.html">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" required autocomplete="name" />
+
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          placeholder="you@example.com" 
+          required 
+          autocomplete="email" 
+        />
+
+        <label for="message">Message</label>
+        <textarea 
+          id="message" 
+          name="message" 
+          rows="5" 
+          placeholder="Type your message here..." 
+          required
+        ></textarea>
+
+        <button type="submit">Send Message</button>
+      </form>
+      <p id="form-status"></p>
+    </section>
+
+    <section class="user-reviews" aria-label="User reviews and testimonials">
+      <h3>What People Say</h3>
+
+      <article class="review">
+        <p>“MindMate helped me get the support I needed when I was struggling. Highly recommended!” – Amina R.</p>
+      </article>
+
+      <article class="review">
+        <p>“Booking an appointment was super easy and the staff were kind and professional.” – John K.</p>
+      </article>
+
+      <article class="review">
+        <p>“Love the resources and motivational quotes. They keep me going every day!” – Lydia M.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 MindMate. All rights reserved.</p>
+  </footer>
+
+  <script src="js/form-validation.js" defer></script>
+</body>
+</html>
