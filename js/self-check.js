@@ -22,54 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
     resultBox.classList.remove("hidden");
 
     try {
-      // Create a comprehensive analysis prompt
-      const analysisPrompt = `Analyze this emotional self-check data and provide a helpful, supportive response:
-        - Current mood: ${mood}
-        - Sleeping well: ${sleep}
-        - Feeling supported: ${support}
-        - Difficulty focusing: ${focus}
-        
-        Provide a brief, empathetic analysis with specific suggestions. Keep it under 150 words.`;
-
-      // Use a simple AI API for analysis (fallback to local logic if API fails)
-      let aiResponse = null;
-      
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer sk-proj-..." // You'll need to add your API key here
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "system",
-                content: "You are a supportive mental health assistant. Provide brief, empathetic responses with practical suggestions."
-              },
-              {
-                role: "user",
-                content: analysisPrompt
-              }
-            ],
-            max_tokens: 200,
-            temperature: 0.7
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          aiResponse = data.choices[0].message.content;
-        }
-      } catch (apiError) {
-        console.log("AI API not available, using local analysis");
-      }
-
-      // Generate enhanced local analysis if AI API is not available
-      if (!aiResponse) {
-        aiResponse = generateLocalAnalysis(mood, sleep, support, focus);
-      }
+      // Generate local analysis (no API key needed)
+      const aiResponse = generateLocalAnalysis(mood, sleep, support, focus);
 
       // Display the result
       resultBox.innerHTML = `

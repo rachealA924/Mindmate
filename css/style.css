@@ -8,7 +8,6 @@
   font-style: normal;
 }
 
-
 /* Root variables for dark theme */
 :root {
   --primary: #4e9af1;
@@ -60,6 +59,30 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+
+  /* 🔥 Background Image */
+  background: url('../images/mentalwellness.png') no-repeat center center fixed;
+  background-size: cover;
+  position: relative;
+  z-index: 0;
+}
+
+/* 🔥 Overlay for tint */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255,255,255,0.6); /* Light mode tint */
+  z-index: -1; /* keeps it behind all content */
+  transition: background-color 0.3s ease;
+}
+
+/* 🔥 Dark Mode Overlay */
+body.dark-mode::before {
+  background-color: rgba(0,0,0,0.6); /* Dark mode tint */
 }
 
 /* Header and Navigation */
@@ -151,6 +174,7 @@ main {
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(78,154,241,0.5);
 }
+
 @media (max-width: 768px) {
   .about-hero {
     flex-direction: column; /* stack image and text */
@@ -162,7 +186,6 @@ main {
     max-width: 250px;
   }
 }
-
 
 /* 🎯 Founder Images – About Us Section */
 @media (max-width: 600px) {
@@ -192,6 +215,7 @@ main {
   padding: 1rem;
   border-radius: 12px;
 }
+
 /* Founder images */
 .founder-profile img {
   width: 100%;          /* fill the container width */
@@ -230,7 +254,7 @@ main {
   .founder-text p {
     font-size: 1.3rem;
     line-height: 1.4;
-    padding: 0 1rem; /* add spacing so text doesn’t touch edges */
+    padding: 0 1rem; /* add spacing so text doesn't touch edges */
   }
 }
 
@@ -246,11 +270,9 @@ main {
   line-height: 1.5;
 }
 
-
 .hero > div, .about-hero > div, .booking-intro > div, .contact-intro > div {
   flex: 2; /* text takes more space */
 }
-
 
 h2, h3, h4 {
   color: var(--primary);
@@ -367,7 +389,7 @@ textarea {
   background-color: var(--input-bg);
   color: var(--text);
   font-size: 1.2rem;
-  font-family: var(--font-family);
+  font-family: var(--font-body);
   transition: border-color 0.3s ease;
 }
 
@@ -404,7 +426,7 @@ input[type="checkbox"] {
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   color: var(--text);
-  font-family: var(--font-family);
+  font-family: var(--font-body);
 }
 
 .self-check .question {
@@ -452,7 +474,11 @@ input[type="checkbox"] {
   user-select: none;
   min-height: 50px;
   line-height: 1.4;
-  display: none;
+  display: block;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .result-box.insight {
@@ -592,40 +618,7 @@ body.dark-mode .motivational-quotes {
   border-left: 3px solid var(--accent);
 }
 
-
-body {
-  margin: 0;
-  font-family: var(--font-family);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-
-  /* 🔥 Background Image */
-  background: url('../images/mentalwellness.png') no-repeat center center fixed;
-  background-size: cover;
-  position: relative;
-  z-index: 0;
-}
-
-/* 🔥 Overlay for tint */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255,255,255,0.6); /* Light mode tint */
-  z-index: -1; /* keeps it behind all content */
-  transition: background-color 0.3s ease;
-}
-
-/* 🔥 Dark Mode Overlay */
-body.dark-mode::before {
-  background-color: rgba(0,0,0,0.6); /* Dark mode tint */
-}
- /* ✅ EMOTION CHECK IMAGE */
+/* ✅ EMOTION CHECK IMAGE */
 .emotion-check {
   text-align: left;
   padding: 2rem;
