@@ -42,11 +42,16 @@
 
     <section class="booking-form" aria-labelledby="booking-form-title">
 
-     <button id="google-auth-btn" type="button" style="margin-bottom:1rem;">
-      Sign in with Google
-     </button>
+      <!-- Google Identity Services Sign-In -->
+      <div id="g_id_onload"
+           data-client_id="443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
 
-    <h2 id="booking-form-title" class="visually-hidden">Appointment Booking Form</h2>
+      <div class="g_id_signin" data-type="standard"></div>
+
+      <h2 id="booking-form-title" class="visually-hidden">Appointment Booking Form</h2>
       <form action="#" method="POST" novalidate>
         <label for="fullname">Full Name</label>
         <input type="text" id="fullname" name="fullname" required autocomplete="name" />
@@ -93,7 +98,11 @@
   <footer>
     <p>&copy; 2025 MindMate. All rights reserved.</p>
   </footer>
+
+  <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Your appointment.js script -->
   <script src="js/appointment.js" defer></script>
 </body>
 </html>

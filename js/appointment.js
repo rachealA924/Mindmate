@@ -1,32 +1,32 @@
-let googleAccessToken = null;
+let userEmail = null;
 
-window.onload = function() {
-  const googleBtn = document.getElementById('google-auth-btn');
-  if (googleBtn && window.google && window.google.accounts && window.google.accounts.oauth2) {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: '443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com',
-      scope: 'https://www.googleapis.com/auth/calendar',
-      callback: (tokenResponse) => {
-        googleAccessToken = tokenResponse.access_token;
-        document.getElementById('booking-message').textContent = 'Signed in with Google! You can now book.';
-      },
-    });
-    googleBtn.onclick = () => {
-      client.requestAccessToken();
-    };
-  }
-};
+function handleCredentialResponse(response) {
+  const base64Url = response.credential.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+  ).join(''));
+  const userObject = JSON.parse(jsonPayload);
+
+  userEmail = userObject.email;
+
+  const messageDiv = document.getElementById('booking-message');
+  messageDiv.textContent = `Signed in as ${userEmail}`;
+  messageDiv.style.color = 'lightgreen';
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".booking-form form");
   const message = document.getElementById("booking-message");
+
   if (!form || !message) return;
 
-  form.addEventListener("submit", async function(e) {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    if (!googleAccessToken) {
-      message.textContent = "Please sign in with Google before booking.";
+    if (!userEmail) {
+      message.textContent = "❌ Please sign in with Google before booking.";
+      message.style.color = 'red';
       return;
     }
 
@@ -37,47 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const time = form.time.value;
     const notes = form.notes.value;
 
-    // Prepare event details for RapidAPI Google Calendar MCP
-    const event = {
-      type: 'create_event',
-      calendarId: 'primary',
-      summary: `Appointment with ${name}`,
-      description: notes,
-      start: { dateTime: `${date}T${time}:00` },
-      end: { dateTime: `${date}T${time}:30` },
-      attendees: [{ email }]
-    };
+    // Here you would normally send this data to your backend or API
+    // For now, just show a success message
 
-    // Call Google Calendar API via RapidAPI
-    try {
-      const response = await fetch("https://google-calendar-mcp.p.rapidapi.com/calendar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-rapidapi-key": "b89332d4e4msh6f72d3684896257p1c803bjsn4952a0000807",
-          "x-rapidapi-host": "google-calendar-mcp.p.rapidapi.com",
-          "X-Google-Calendar-Token": "https://vercel.com/racheals-projects-cf6a576e/mindmate-sum"
-        },
-        body: JSON.stringify(event)
-      });
-      const result = await response.json();
-      if (result.id) {
-        message.textContent = "✅Booking submitted! We'll contact you soon.";
-        form.reset();
-      } else {
-        message.textContent = "❌Booking failed. Please try again.";
-      }
-    } catch (err) {
-      message.textContent = "Error connecting to booking API.";
-    }
+    message.textContent = `✅ Appointment booked for ${name} (${email}) on ${date} at ${time}.`;
+    message.style.color = 'lightgreen';
+
+    form.reset();
   });
-});
-
-document.getElementById('google-auth-btn').addEventListener('click', () => {
-  const clientId = '443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com';
-  const redirectUri = encodeURIComponent('https://mindmate-sum.vercel.app/appointments.html');
-  const scope = encodeURIComponent('https://www.googleapis.com/auth/userinfo.email');
-  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=select_account`;
-
-  window.location.href = oauthUrl;
 });

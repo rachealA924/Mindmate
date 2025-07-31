@@ -2,9 +2,9 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Node.js and nginx
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
+        openssh-server sudo iputils-ping ca-certificates haproxy && \
     mkdir /run/sshd && \
     if ! id -u ubuntu >/dev/null 2>&1; then \
         useradd --create-home --uid 1000 --shell /bin/bash ubuntu; \
@@ -15,30 +15,36 @@ RUN apt-get update -qq && \
     sed -ri 's/#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY . /var/www/html
+RUN cat > /etc/haproxy/haproxy.cfg << 'EOF'
+global
+    maxconn 256
+    log stdout format raw local0 info
 
-# Configure nginx
-RUN echo 'server {\n\
-    listen 80;\n\
-    root /var/www/html;\n\
-    index index.html index.htm;\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-        proxy_set_header Host $host;\n\
-        proxy_set_header X-Real-IP $remote_addr;\n\
-    }\n\
-}' > /etc/nginx/sites-available/default
+defaults
+    mode http
+    timeout connect 5s
+    timeout client  50s
+    timeout server  50s
+    option forwardfor
+    option http-server-close
 
-EXPOSE 22 80
+frontend http-in
+    bind *:80
+    default_backend servers
+    http-response add-header X-Served-By %[srv_name]
+
+backend servers
+    balance roundrobin
+    server web01 172.20.0.11:80 check
+    server web02 172.20.0.12:80 check
+EOF
 
 RUN ssh-keygen -A
 
-# Create startup script to run nginx, Node.js app and sshd
+# Create startup script to run both haproxy and sshd
 RUN echo '#!/bin/bash\n\
-echo "Starting nginx..."\n\
-service nginx start\n\
-echo "Starting SSH daemon..."\n\
+haproxy -f /etc/haproxy/haproxy.cfg -db &\n\
 /usr/sbin/sshd -D' > /startup.sh && \
     chmod +x /startup.sh
 
-CMD ["/startup.sh"]
+CMD ["/startup.sh"] 
