@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "Content-Type": "application/json",
           "x-rapidapi-key": "b89332d4e4msh6f72d3684896257p1c803bjsn4952a0000807",
           "x-rapidapi-host": "google-calendar-mcp.p.rapidapi.com",
-          "X-Google-Calendar-Token": googleAccessToken
+          "X-Google-Calendar-Token": "https://vercel.com/racheals-projects-cf6a576e/mindmate-sum"
         },
         body: JSON.stringify(event)
       });
@@ -71,4 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
       message.textContent = "Error connecting to booking API.";
     }
   });
+});
+
+document.getElementById('google-auth-btn').addEventListener('click', () => {
+  const clientId = '443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com';
+  const redirectUri = encodeURIComponent('https://mindmate-sum.vercel.app/appointments.html');
+  const scope = encodeURIComponent('https://www.googleapis.com/auth/userinfo.email');
+  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=select_account`;
+
+  window.location.href = oauthUrl;
 });
