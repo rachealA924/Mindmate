@@ -118,5 +118,3 @@ Special thanks to:
 API developers for free-tier access.
 NGINX for handling deployment & load balancing.
 Certbot/LetsEncrypt for SSL certificates.
-
-
