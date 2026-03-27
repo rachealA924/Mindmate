@@ -1,19 +1,16 @@
+// appointment.js  (UPDATED — replaces the old version)
+// Submits booking to the backend API instead of just showing a message
+
+const API_BASE = "https://mindmate.vercel.app/api";
+
+// Google Sign-In callback (still needed for the GSI button)
 let userEmail = null;
-
-function handleCredentialResponse(response) {
-  const base64Url = response.credential.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-  ).join(''));
-  const userObject = JSON.parse(jsonPayload);
-
-  userEmail = userObject.email;
-
-  const messageDiv = document.getElementById('booking-message');
-  messageDiv.textContent = `Signed in as ${userEmail}`;
-  messageDiv.style.color = 'lightgreen';
-}
+window.handleCredentialResponse = function (response) {
+  const payload = JSON.parse(atob(response.credential.split(".")[1]));
+  userEmail = payload.email;
+  const msg = document.getElementById("booking-message");
+  if (msg) { msg.textContent = `Signed in as ${userEmail}`; msg.style.color = "var(--color-text-success, green)"; }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".booking-form form");
@@ -21,28 +18,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!form || !message) return;
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!userEmail) {
+    const idToken = localStorage.getItem("mindmate_id_token");
+    if (!idToken) {
       message.textContent = "❌ Please sign in with Google before booking.";
-      message.style.color = 'red';
+      message.style.color = "red";
       return;
     }
 
-    // Collect form data
-    const name = form.fullname.value;
-    const email = form.email.value;
-    const date = form.date.value;
-    const time = form.time.value;
-    const notes = form.notes.value;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Booking...";
+    message.textContent = "";
 
-    // Here you would normally send this data to your backend or API
-    // For now, just show a success message
+    const body = {
+      fullname: form.fullname.value,
+      email: form.email.value,
+      type: form.type.value,
+      date: form.date.value,
+      time: form.time.value,
+      notes: form.notes.value,
+    };
 
-    message.textContent = `✅ Appointment booked for ${name} (${email}) on ${date} at ${time}.`;
-    message.style.color = 'lightgreen';
+    try {
+      const res = await fetch(`${API_BASE}/appointments/book`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-    form.reset();
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Booking failed");
+
+      message.textContent = `✅ ${data.message}`;
+      message.style.color = "green";
+      form.reset();
+    } catch (err) {
+      message.textContent = `❌ ${err.message}`;
+      message.style.color = "red";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Book Appointment";
+    }
   });
 });
