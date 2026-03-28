@@ -152,9 +152,10 @@ async function handleFirebaseUser(user, idToken) {
       setTimeout(() => message.textContent = "", 3000);
     }
 
-    // Load therapists
+    // Load therapists and existing bookings list
     await loadTherapists();
     setupBookingForm();
+    await loadUserBookings();
 
   } catch (error) {
     console.error("❌ Sign-in error:", error);
@@ -469,6 +470,107 @@ async function loadTherapists() {
   }
 }
 
+async function fetchUserBookings() {
+  try {
+    const idToken = localStorage.getItem("mindmate_id_token");
+    if (!idToken) return [];
+
+    const res = await fetch(`${API_BASE}/api/appointments/user`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.bookings || [];
+    }
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+  }
+  return [];
+}
+
+async function loadUserBookings() {
+  try {
+    const idToken = localStorage.getItem("mindmate_id_token");
+    if (!idToken) return;
+
+    const res = await fetch(`${API_BASE}/api/appointments/user`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      console.warn("Warning: unable to load user bookings", res.status);
+      return;
+    }
+
+    const data = await res.json();
+    const bookingsContainer = document.getElementById("existing-bookings");
+    const bookingsList = document.getElementById("bookings-list");
+
+    if (data.bookings && data.bookings.length > 0) {
+      if (bookingsContainer) bookingsContainer.style.display = "block";
+      if (bookingsList) {
+        bookingsList.innerHTML = data.bookings.map(booking => `
+          <div class="booking-item" style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; background:#fff;">
+            <p><strong>📅 ${booking.date}</strong> at <strong>⏰ ${booking.time}</strong></p>
+            <p>👤 ${booking.therapistName || 'Therapist'}</p>
+            <p>Status: ${booking.status || 'confirmed'}</p>
+            <button type="button" onclick="cancelBooking('${booking.id}')" class="cancel-btn">Cancel</button>
+          </div>
+        `).join("");
+      }
+    } else {
+      if (bookingsContainer) bookingsContainer.style.display = "none";
+      if (bookingsList) bookingsList.innerHTML = "";
+    }
+  } catch (err) {
+    console.error("Error loading bookings:", err);
+  }
+}
+
+async function cancelBooking(bookingId) {
+  if (!confirm("Are you sure you want to cancel this appointment?")) return;
+
+  try {
+    const idToken = localStorage.getItem("mindmate_id_token");
+    if (!idToken) throw new Error("Not signed in");
+
+    const res = await fetch(`${API_BASE}/api/appointments/${bookingId}/cancel`, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      alert("Appointment cancelled successfully!");
+      await loadUserBookings();
+      if (selectedTherapist) {
+        await loadSlots(selectedTherapist.id);
+      }
+      return;
+    }
+
+    const data = await res.json();
+    alert(`Failed to cancel: ${data.error || 'Unknown error'}`);
+  } catch (err) {
+    console.error("Error cancelling booking:", err);
+    alert("Failed to cancel appointment");
+  }
+}
+
 async function loadSlots(therapistId) {
   try {
     const idToken = localStorage.getItem("mindmate_id_token");
@@ -493,6 +595,9 @@ async function loadSlots(therapistId) {
       return;
     }
 
+    const userBookings = await fetchUserBookings();
+    const userBookedTimes = new Set(userBookings.map(booking => `${booking.date}|${booking.time}`));
+
     let slotsHtml = '';
     const sortedDates = Object.keys(data.slots).sort();
 
@@ -511,12 +616,17 @@ async function loadSlots(therapistId) {
       `;
 
       slots.forEach(slot => {
+        const isUserBooked = userBookedTimes.has(`${date}|${slot.time}`);
+        const disabledAttrs = isUserBooked ? 'disabled aria-disabled="true"' : '';
+        const extraClass = isUserBooked ? 'time-slot booked-slot' : 'time-slot';
+        const note = isUserBooked ? ' (Already booked)' : '';
+
         slotsHtml += `
-          <button class="time-slot" 
+          <button class="${extraClass}" 
                   data-slot-id="${slot.id}" 
                   data-time="${slot.time}" 
-                  data-date="${date}">
-            ${slot.time}
+                  data-date="${date}" ${disabledAttrs}>
+            ${slot.time}${note}
           </button>
         `;
       });
@@ -531,6 +641,8 @@ async function loadSlots(therapistId) {
 
     document.querySelectorAll(".time-slot").forEach(btn => {
       btn.addEventListener("click", () => {
+        if (btn.disabled) return;
+
         document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
         btn.classList.add("selected");
 
@@ -616,21 +728,6 @@ function setupBookingForm() {
       slotId: selectedSlot.id
     });
 
-    const res = await fetch(`${API_BASE}/api/appointments/book`, {
-      method: "POST",
-      mode: 'cors',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(body),
-    });
-
-    console.log("📥 Response status:", res.status);
-    const data = await res.json();
-    console.log("📥 Response data:", data);
-
     try {
       const res = await fetch(`${API_BASE}/api/appointments/book`, {
         method: "POST",
@@ -648,11 +745,20 @@ function setupBookingForm() {
       // Handle specific HTTP errors
       if (!res.ok) {
         if (res.status === 409) {
-          // Check what specific error message came from the server
           if (data.error === "This time slot has already been booked") {
             throw new Error("This time slot was just booked by someone else. Please pick another.");
           } else if (data.error === "You already have a booking at this time") {
-            throw new Error("You already have a booking scheduled at this time. Please select a different time.");
+            const existingBookings = await fetchUserBookings();
+            const conflictingBooking = existingBookings.find(
+              booking => booking.date === selectedSlot.date && booking.time === selectedSlot.time
+            );
+
+            let errorMsg = "You already have a booking scheduled at this time.";
+            if (conflictingBooking) {
+              errorMsg += `\n\nExisting booking:\n📅 ${conflictingBooking.date}\n⏰ ${conflictingBooking.time}\n👤 ${conflictingBooking.therapistName || 'Therapist'}\n\nPlease select a different time or cancel your existing booking.`;
+            }
+
+            throw new Error(errorMsg);
           } else {
             throw new Error(data.error || "This slot is no longer available. Please pick another.");
           }
@@ -671,8 +777,13 @@ function setupBookingForm() {
       selectedSlot = null;
       document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
 
-      // 5. Refresh Available Slots (Don't await this, let it happen in background)
-      loadSlots(selectedTherapist.id).catch(err => console.error("Error refreshing slots:", err));
+      // 5. Refresh Available Slots and booking list
+      try {
+        await loadSlots(selectedTherapist.id);
+        await loadUserBookings();
+      } catch (refreshErr) {
+        console.error("Error refreshing slots/bookings:", refreshErr);
+      }
 
       // Success: Change button text but keep it disabled to prevent a duplicate second booking
       submitBtn.textContent = "Booked!";
@@ -738,6 +849,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initFirebase();
     await loadTherapists();
     setupBookingForm();
+    await loadUserBookings();
   } else {
     console.log("🔐 User not signed in, initializing sign-in methods...");
 

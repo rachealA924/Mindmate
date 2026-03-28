@@ -140,6 +140,34 @@ app.post('/api/appointments/book', (req, res) => {
   });
 });
 
+// Fetch user bookings endpoint
+app.get('/api/appointments/user', (req, res) => {
+  // For local development stubbed data; in production this uses Firebase auth + Firestore
+  return res.json({
+    success: true,
+    bookings: [
+      {
+        id: 'mock-booking-123',
+        date: '2025-01-01',
+        time: '10:00',
+        therapistName: 'Dr. Sarah Johnson',
+        status: 'confirmed'
+      }
+    ]
+  });
+});
+
+// Cancel appointment endpoint
+app.post('/api/appointments/:bookingId/cancel', (req, res) => {
+  const { bookingId } = req.params;
+  if (!bookingId) {
+    return res.status(400).json({ error: 'bookingId required' });
+  }
+
+  // In real product, mark appointment status canceled and reopen slot
+  return res.json({ success: true, message: `Booking ${bookingId} canceled.` });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`\n========================================`);

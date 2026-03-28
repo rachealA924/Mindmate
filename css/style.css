@@ -1016,6 +1016,18 @@ hr {
   transition: all 0.2s;
 }
 
+.time-slot.booked-slot {
+  opacity: 0.55;
+  background: #f7f7f7;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+.time-slot.booked-slot:hover {
+  background: #f7f7f7;
+  color: #666;
+}
+
 .time-slot:hover {
   background: var(--primary);
   color: white;
