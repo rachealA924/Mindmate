@@ -4,51 +4,46 @@ import { requireAuth } from "../../lib/auth-middleware.js";
 import { handleCors } from "../../lib/cors.js";
 
 export default async function handler(req, res) {
-  // Handle CORS first
   if (handleCors(req, res)) return;
-
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const user = await requireAuth(req);
     const { fullname, email, type, date, time, therapistId, slotId, notes } = req.body;
     
-    if (!fullname || !email || !date || !time || !therapistId) {
-      return res.status(400).json({ error: "Missing required fields: fullname, email, date, time, therapistId" });
-    }
+    // 1. Pre-Transaction Check: Fast query to see if user is double-booking themselves
+    const existing = await db.collection("appointments")
+      .where("userId", "==", user.uid)
+      .where("date", "==", date)
+      .where("time", "==", time)
+      .limit(1)
+      .get();
     
+    if (!existing.empty) {
+      return res.status(409).json({ error: "You already have a booking at this time" });
+    }
+
     const slotRef = db.collection("appointment_slots").doc(slotId);
     
+    // 2. The Atomic Transaction
     const result = await db.runTransaction(async (transaction) => {
-      const slotDoc = await transaction.get(slotRef);
+      const slotDoc = await transaction.get(slotRef); // READ FIRST
       
       if (!slotDoc.exists) throw new Error("Time slot not found");
       
       const slot = slotDoc.data();
-      
-      if (slot.therapistId !== therapistId || slot.date !== date || slot.time !== time) {
-        throw new Error("Slot information mismatch");
-      }
-      
       if (slot.isBooked) throw new Error("This time slot has already been booked");
-      
-      const existingBooking = await db.collection("appointments")
-        .where("userId", "==", user.uid)
-        .where("date", "==", date)
-        .where("time", "==", time)
-        .where("status", "in", ["pending", "confirmed"])
-        .get();
-      
-      if (!existingBooking.empty) throw new Error("You already have a booking at this time");
+
+      // WRITE LAST
+      const appointmentRef = db.collection("appointments").doc();
       
       transaction.update(slotRef, {
         isBooked: true,
         bookedBy: user.uid,
         bookedAt: new Date().toISOString()
       });
-      
-      const appointmentRef = db.collection("appointments").doc();
-      const appointmentData = {
+
+      transaction.set(appointmentRef, {
         id: appointmentRef.id,
         userId: user.uid,
         userEmail: email,
@@ -57,47 +52,32 @@ export default async function handler(req, res) {
         slotId,
         date,
         time,
-        type: type || "therapy",
-        notes: notes || "",
         status: "confirmed",
         createdAt: new Date().toISOString()
-      };
-      
-      transaction.set(appointmentRef, appointmentData);
+      });
       
       return { appointmentId: appointmentRef.id };
     });
-    
-    let calendarEventId = null;
-    try {
-      calendarEventId = await createCalendarEvent({
-        userId: user.uid,
-        fullname,
-        email,
-        type,
-        date,
-        time,
-        therapistId
-      });
-    } catch (calErr) {
-      console.warn("Calendar event creation failed:", calErr.message);
-    }
+
+    // 3. Post-Transaction: Calendar (Do not put this inside the transaction!)
+    createCalendarEvent({ userId: user.uid, fullname, email, type, date, time, therapistId })
+      .catch(e => console.warn("Non-critical Calendar Failure:", e.message));
     
     return res.status(201).json({
       success: true,
-      bookingId: result.appointmentId,
-      calendarEventId,
-      message: `✅ Appointment confirmed with ${fullname} on ${date} at ${time}. You'll receive a confirmation email shortly.`
+      message: "Appointment confirmed!",
+      bookingId: result.appointmentId
     });
     
   } catch (err) {
-    console.error("Booking error:", err);
+    console.error("Booking error details:", err.message);
     
-    if (err.message === "This time slot has already been booked" || err.message.includes("already have a booking")) {
+    // Distinguish between conflict and server error
+    if (err.message === "This time slot has already been booked") {
       return res.status(409).json({ error: err.message });
     }
     
-    return res.status(err.status || 500).json({ error: err.message || "Internal server error" });
+    return res.status(500).json({ error: "Internal server error during booking." });
   }
 }
 
