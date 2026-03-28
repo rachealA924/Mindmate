@@ -18,15 +18,15 @@ let isInitializing = false;
 async function initFirebase() {
   if (window.firebaseInitialized) return;
   if (isInitializing) return;
-  
+
   isInitializing = true;
   console.log("🔥 Initializing Firebase...");
-  
+
   try {
     // Dynamically import Firebase modules
     const firebaseAppModule = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js');
     const firebaseAuthModule = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
-    
+
     const firebaseConfig = {
       apiKey: "AIzaSyD0tGDETCjJX-LlNqFzqG3Umvmk8EYLUNs",
       authDomain: "mindmate-467614.firebaseapp.com",
@@ -35,19 +35,20 @@ async function initFirebase() {
       messagingSenderId: "443513007248",
       appId: "1:443513007248:web:d1f919b600aaeac2f5bc15"
     };
-    
+
     const app = firebaseAppModule.initializeApp(firebaseConfig);
     firebaseAuth = firebaseAuthModule.getAuth(app);
     const provider = new firebaseAuthModule.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/calendar.events');
     provider.setCustomParameters({ prompt: 'select_account' });
-    
+
     // Store auth instance globally
     window.firebaseAuth = firebaseAuth;
     window.firebaseInitialized = true;
-    
+
     console.log("✅ Firebase initialized successfully");
-    
+
+    // Listen to auth state changes
     // Listen to auth state changes
     firebaseAuthModule.onAuthStateChanged(firebaseAuth, async (user) => {
       if (user) {
@@ -56,12 +57,14 @@ async function initFirebase() {
         await handleFirebaseUser(user, idToken);
       } else {
         console.log("👤 Firebase auth state changed: user signed out");
-        // Clear local storage and reload
-        localStorage.clear();
-        window.location.reload();
+
+        if (localStorage.getItem("mindmate_id_token")) {
+          localStorage.clear();
+          window.location.reload();
+        }
       }
     });
-    
+
     return { auth: firebaseAuth, provider };
   } catch (error) {
     console.error("❌ Failed to initialize Firebase:", error);
@@ -78,22 +81,22 @@ async function handleFirebaseUser(user, idToken) {
       message.textContent = "🔐 Verifying your sign-in...";
       message.style.color = "blue";
     }
-    
+
     console.log(`📡 Verifying token with: ${API_BASE}/api/auth/verify`);
-    
+
     // Send token to backend for verification
     const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
       method: "POST",
       mode: 'cors',
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
       body: JSON.stringify({ idToken })
     });
-    
+
     console.log(`📥 Response status: ${verifyRes.status}`);
-    
+
     if (!verifyRes.ok) {
       let errorMessage = `HTTP ${verifyRes.status}`;
       try {
@@ -105,21 +108,21 @@ async function handleFirebaseUser(user, idToken) {
       }
       throw new Error(errorMessage);
     }
-    
+
     const data = await verifyRes.json();
     console.log("✅ Verification successful:", data.user.email);
-    
+
     // Store user data
     localStorage.setItem("mindmate_id_token", data.token || idToken);
     localStorage.setItem("mindmate_user", data.user.email);
     localStorage.setItem("mindmate_user_name", data.user.name);
     localStorage.setItem("mindmate_user_data", JSON.stringify(data.user));
     currentUser = data.user;
-    
+
     // Hide login container
     const authContainer = document.getElementById("auth-container");
     if (authContainer) authContainer.style.display = "none";
-    
+
     // Show user info
     const userInfoDiv = document.getElementById("user-info");
     if (userInfoDiv) {
@@ -130,7 +133,7 @@ async function handleFirebaseUser(user, idToken) {
           <button id="logout-btn" class="logout-button">Sign Out</button>
         </div>
       `;
-      
+
       document.getElementById("logout-btn")?.addEventListener("click", async () => {
         if (firebaseAuth) {
           await firebaseAuth.signOut();
@@ -139,20 +142,20 @@ async function handleFirebaseUser(user, idToken) {
         window.location.reload();
       });
     }
-    
+
     if (message) {
       message.textContent = `✅ Welcome ${data.user.name || data.user.email}!`;
       message.style.color = "green";
       setTimeout(() => message.textContent = "", 3000);
     }
-    
+
     // Load therapists
     await loadTherapists();
     setupBookingForm();
-    
+
   } catch (error) {
     console.error("❌ Sign-in error:", error);
-    
+
     const message = document.getElementById("booking-message");
     if (message) {
       let errorMsg = error.message;
@@ -169,30 +172,30 @@ async function handleFirebaseUser(user, idToken) {
 async function signInWithFirebase() {
   try {
     console.log("🔐 Starting Firebase sign-in...");
-    
+
     const message = document.getElementById("booking-message");
     if (message) {
       message.textContent = "🔐 Opening sign-in window...";
       message.style.color = "blue";
     }
-    
+
     const firebase = await initFirebase();
     if (!firebase) {
       throw new Error("Firebase initialization failed");
     }
-    
+
     const { auth, provider } = firebase;
     const firebaseAuthModule = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
-    
+
     const result = await firebaseAuthModule.signInWithPopup(auth, provider);
     const user = result.user;
     const idToken = await user.getIdToken();
-    
+
     await handleFirebaseUser(user, idToken);
-    
+
   } catch (error) {
     console.error("❌ Firebase sign-in error:", error);
-    
+
     const message = document.getElementById("booking-message");
     if (message) {
       let errorMsg = error.message;
@@ -208,32 +211,32 @@ async function signInWithFirebase() {
 }
 
 // Google One-Tap Sign-In callback (fallback)
-window.handleCredentialResponse = async function(response) {
+window.handleCredentialResponse = async function (response) {
   console.log("🔐 Google One-Tap response received");
-  
+
   try {
     const idToken = response.credential;
-    
+
     const message = document.getElementById("booking-message");
     if (message) {
       message.textContent = "🔐 Verifying your sign-in...";
       message.style.color = "blue";
     }
-    
+
     console.log(`📡 Verifying token with: ${API_BASE}/api/auth/verify`);
-    
+
     const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
       method: "POST",
       mode: 'cors',
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
       body: JSON.stringify({ idToken })
     });
-    
+
     console.log(`📥 Response status: ${verifyRes.status}`);
-    
+
     if (!verifyRes.ok) {
       let errorMessage = `HTTP ${verifyRes.status}`;
       try {
@@ -245,21 +248,21 @@ window.handleCredentialResponse = async function(response) {
       }
       throw new Error(errorMessage);
     }
-    
+
     const data = await verifyRes.json();
     console.log("✅ Verification successful:", data.user.email);
-    
+
     // Store user data
     localStorage.setItem("mindmate_id_token", data.token || idToken);
     localStorage.setItem("mindmate_user", data.user.email);
     localStorage.setItem("mindmate_user_name", data.user.name);
     localStorage.setItem("mindmate_user_data", JSON.stringify(data.user));
     currentUser = data.user;
-    
+
     // Hide login container
     const authContainer = document.getElementById("auth-container");
     if (authContainer) authContainer.style.display = "none";
-    
+
     // Show user info
     const userInfoDiv = document.getElementById("user-info");
     if (userInfoDiv) {
@@ -270,7 +273,7 @@ window.handleCredentialResponse = async function(response) {
           <button id="logout-btn" class="logout-button">Sign Out</button>
         </div>
       `;
-      
+
       document.getElementById("logout-btn")?.addEventListener("click", async () => {
         if (firebaseAuth) {
           await firebaseAuth.signOut();
@@ -279,20 +282,20 @@ window.handleCredentialResponse = async function(response) {
         window.location.reload();
       });
     }
-    
+
     if (message) {
       message.textContent = `✅ Welcome ${data.user.name || data.user.email}!`;
       message.style.color = "green";
       setTimeout(() => message.textContent = "", 3000);
     }
-    
+
     // Load therapists
     await loadTherapists();
     setupBookingForm();
-    
+
   } catch (error) {
     console.error("❌ Sign-in error:", error);
-    
+
     const message = document.getElementById("booking-message");
     if (message) {
       let errorMsg = error.message;
@@ -302,7 +305,7 @@ window.handleCredentialResponse = async function(response) {
       message.innerHTML = `❌ Sign-in failed: ${errorMsg}<br><small>Try clicking the "Alternative Sign-in" button below.</small>`;
       message.style.color = "red";
     }
-    
+
     // Show fallback button
     const fallback = document.getElementById("firebase-auth-fallback");
     if (fallback) fallback.style.display = "block";
@@ -312,27 +315,27 @@ window.handleCredentialResponse = async function(response) {
 // Initialize Google One-Tap Sign-In
 function initGoogleSignIn() {
   console.log("🔧 Initializing Google One-Tap Sign-In...");
-  
+
   if (!window.google || !window.google.accounts) {
     console.log("⏳ Google Identity Services not ready, retrying in 1 second...");
     setTimeout(initGoogleSignIn, 1000);
     return;
   }
-  
+
   console.log("✅ Google Identity Services is ready!");
-  
+
   const clientId = "443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com";
-  
+
   window.google.accounts.id.initialize({
     client_id: clientId,
     callback: window.handleCredentialResponse,
     auto_select: false,
     cancel_on_tap_outside: true
   });
-  
+
   window.google.accounts.id.renderButton(
     document.getElementById("google-signin-button"),
-    { 
+    {
       type: "standard",
       theme: "outline",
       size: "large",
@@ -341,9 +344,9 @@ function initGoogleSignIn() {
       logo_alignment: "left"
     }
   );
-  
+
   window.google.accounts.id.prompt();
-  
+
   console.log("✅ Google Sign-In button rendered");
 }
 
@@ -355,7 +358,7 @@ async function loadTherapists() {
       console.log("⚠️ No token found");
       return;
     }
-    
+
     console.log("📡 Loading therapists...");
     const res = await fetch(`${API_BASE}/api/therapists/list`, {
       method: 'GET',
@@ -366,23 +369,23 @@ async function loadTherapists() {
         'Accept': 'application/json'
       }
     });
-    
+
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-    
+
     const data = await res.json();
     const container = document.getElementById("therapist-list");
-    
+
     if (!container) return;
-    
+
     if (!data.therapists || data.therapists.length === 0) {
       container.innerHTML = '<p class="no-therapists">No therapists available at the moment. Please check back later.</p>';
       return;
     }
-    
+
     console.log(`✅ Loaded ${data.therapists.length} therapists`);
-    
+
     container.innerHTML = data.therapists.map(therapist => `
       <div class="therapist-card" data-id="${therapist.id}">
         <div class="therapist-header">
@@ -401,14 +404,14 @@ async function loadTherapists() {
         </div>
       </div>
     `).join("");
-    
+
     // Add event listeners to select buttons
     document.querySelectorAll(".select-therapist-btn").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         const therapistId = btn.dataset.id;
         selectedTherapist = data.therapists.find(t => t.id === therapistId);
         await loadSlots(therapistId);
-        
+
         const bookingForm = document.querySelector(".booking-form");
         if (bookingForm) {
           bookingForm.style.display = "block";
@@ -438,36 +441,36 @@ async function loadSlots(therapistId) {
         'Accept': 'application/json'
       }
     });
-    
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
+
     const data = await res.json();
     const slotsContainer = document.querySelector(`#slots-${therapistId} .slots-grid`);
-    
+
     if (!slotsContainer) return;
-    
+
     if (!data.slots || Object.keys(data.slots).length === 0) {
       slotsContainer.innerHTML = '<p>No available slots for the next 7 days.</p>';
       return;
     }
-    
+
     let slotsHtml = '';
     const sortedDates = Object.keys(data.slots).sort();
-    
+
     for (const date of sortedDates) {
       const slots = data.slots[date];
-      const formattedDate = new Date(date).toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'short', 
-        day: 'numeric' 
+      const formattedDate = new Date(date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric'
       });
-      
+
       slotsHtml += `
         <div class="date-group">
           <h5>${formattedDate}</h5>
           <div class="time-slots">
       `;
-      
+
       slots.forEach(slot => {
         slotsHtml += `
           <button class="time-slot" 
@@ -478,26 +481,26 @@ async function loadSlots(therapistId) {
           </button>
         `;
       });
-      
+
       slotsHtml += `</div></div>`;
     }
-    
+
     slotsContainer.innerHTML = slotsHtml;
-    
+
     const slotsDiv = document.getElementById(`slots-${therapistId}`);
     if (slotsDiv) slotsDiv.style.display = "block";
-    
+
     document.querySelectorAll(".time-slot").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
         btn.classList.add("selected");
-        
+
         selectedSlot = {
           id: btn.dataset.slotId,
           time: btn.dataset.time,
           date: btn.dataset.date
         };
-        
+
         const dateInput = document.getElementById("date");
         const timeInput = document.getElementById("time");
         if (dateInput) dateInput.value = selectedSlot.date;
@@ -516,12 +519,12 @@ async function loadSlots(therapistId) {
 function setupBookingForm() {
   const form = document.querySelector(".booking-form form");
   const message = document.getElementById("booking-message");
-  
+
   if (!form) return;
-  
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
+
     if (!selectedSlot) {
       if (message) {
         message.textContent = "❌ Please select a time slot first.";
@@ -529,7 +532,7 @@ function setupBookingForm() {
       }
       return;
     }
-    
+
     const idToken = localStorage.getItem("mindmate_id_token");
     if (!idToken) {
       if (message) {
@@ -538,12 +541,12 @@ function setupBookingForm() {
       }
       return;
     }
-    
+
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = "Booking...";
     if (message) message.textContent = "📅 Confirming your appointment...";
-    
+
     const body = {
       fullname: form.fullname.value,
       email: form.email.value,
@@ -554,7 +557,7 @@ function setupBookingForm() {
       therapistId: selectedTherapist.id,
       slotId: selectedSlot.id
     };
-    
+
     try {
       const res = await fetch(`${API_BASE}/api/appointments/book`, {
         method: "POST",
@@ -566,25 +569,25 @@ function setupBookingForm() {
         },
         body: JSON.stringify(body),
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.error || "Booking failed");
-      
+
       if (message) {
         message.innerHTML = `✅ ${data.message}<br><small>Check your email for confirmation.</small>`;
         message.style.color = "green";
       }
-      
+
       form.reset();
       selectedSlot = null;
-      
+
       if (selectedTherapist) {
         await loadSlots(selectedTherapist.id);
       }
-      
+
       document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
-      
+
     } catch (err) {
       if (message) {
         message.textContent = `❌ ${err.message}`;
@@ -610,16 +613,16 @@ function setupFallbackSignIn() {
 // Initialize the page when DOM is ready
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("📄 Page loaded, checking auth state...");
-  
+
   const idToken = localStorage.getItem("mindmate_id_token");
   const userEmail = localStorage.getItem("mindmate_user");
-  
+
   if (idToken && userEmail) {
     console.log(`✅ User already signed in: ${userEmail}`);
-    
+
     const authContainer = document.getElementById("auth-container");
     if (authContainer) authContainer.style.display = "none";
-    
+
     const userInfoDiv = document.getElementById("user-info");
     if (userInfoDiv) {
       userInfoDiv.style.display = "block";
@@ -629,7 +632,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <button id="logout-btn" class="logout-button">Sign Out</button>
         </div>
       `;
-      
+
       document.getElementById("logout-btn")?.addEventListener("click", async () => {
         if (firebaseAuth) {
           await firebaseAuth.signOut();
@@ -638,19 +641,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.location.reload();
       });
     }
-    
+
     // Initialize Firebase for logout functionality
     await initFirebase();
     await loadTherapists();
     setupBookingForm();
   } else {
     console.log("🔐 User not signed in, initializing sign-in methods...");
-    
+
     // Initialize Firebase for sign-in
     await initFirebase();
     initGoogleSignIn();
     setupFallbackSignIn();
-    
+
     const therapistSelector = document.querySelector(".therapist-selector");
     if (therapistSelector) {
       therapistSelector.innerHTML = `
