@@ -1,6 +1,6 @@
-import { db } from "../../../lib/firebase-admin.js";
-import { requireAuth } from "../../../lib/auth-middleware.js";
-import { handleCors } from "../../../lib/cors.js";
+import { db } from "../../lib/firebase-admin.js";
+import { requireAuth } from "../../lib/auth-middleware.js";
+import { handleCors } from "../../lib/cors.js";
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;

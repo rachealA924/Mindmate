@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formStatus) { formStatus.textContent = "📤 Sending your message..."; formStatus.style.color = "#007bff"; }
 
     try {
-      const res = await fetch(`${API_BASE}/contact/send`, {
+      const res = await fetch(`${API_BASE}/api/contact/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, message }),

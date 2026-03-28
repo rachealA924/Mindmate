@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const idToken = localStorage.getItem("mindmate_id_token");
 
     try {
-      const res = await fetch(`${API_BASE}/analyze/mood`, {
+      const res = await fetch(`${API_BASE}/api/analyze/mood`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

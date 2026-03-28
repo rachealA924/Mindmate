@@ -549,13 +549,14 @@ async function cancelBooking(bookingId) {
     const idToken = localStorage.getItem("mindmate_id_token");
     if (!idToken) throw new Error("Not signed in");
 
-    const res = await fetch(`${API_BASE}/api/appointments/${bookingId}/cancel`, {
+    const res = await fetch(`${API_BASE}/api/appointments/cancel`, {
       method: 'POST',
       mode: 'cors',
       headers: {
         'Authorization': `Bearer ${idToken}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({ bookingId })
     });
 
     if (res.ok) {

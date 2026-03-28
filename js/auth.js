@@ -56,7 +56,7 @@ export async function loginWithGoogle() {
     const credential = GoogleAuthProvider.credentialFromResult(result);
     const idToken = await result.user.getIdToken();
 
-    const response = await fetch(`${API_BASE}/auth/verify`, {
+    const response = await fetch(`${API_BASE}/api/auth/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

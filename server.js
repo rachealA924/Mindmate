@@ -158,14 +158,34 @@ app.get('/api/appointments/user', (req, res) => {
 });
 
 // Cancel appointment endpoint
-app.post('/api/appointments/:bookingId/cancel', (req, res) => {
-  const { bookingId } = req.params;
+app.post('/api/appointments/cancel', (req, res) => {
+  const { bookingId } = req.body;
   if (!bookingId) {
     return res.status(400).json({ error: 'bookingId required' });
   }
 
   // In real product, mark appointment status canceled and reopen slot
   return res.json({ success: true, message: `Booking ${bookingId} canceled.` });
+});
+
+// Mood analysis endpoint
+app.post('/api/analyze/mood', (req, res) => {
+  const { text } = req.body;
+  if (!text) {
+    return res.status(400).json({ error: 'Text is required' });
+  }
+
+  // Mock mood analysis response
+  const mockAnalysis = {
+    sentiment: 'neutral',
+    score: 0.5,
+    keywords: ['calm', 'balanced'],
+    suggestions: ['Continue with your current routine'],
+    isPremium: false,
+    usageRemaining: 'unlimited'
+  };
+
+  res.json(mockAnalysis);
 });
 
 // Start server
@@ -179,6 +199,9 @@ app.listen(PORT, () => {
   console.log(`   GET  http://localhost:${PORT}/api/therapists/list`);
   console.log(`   GET  http://localhost:${PORT}/api/therapists/availability?therapistId=1`);
   console.log(`   POST http://localhost:${PORT}/api/appointments/book`);
+  console.log(`   GET  http://localhost:${PORT}/api/appointments/user`);
+  console.log(`   POST http://localhost:${PORT}/api/appointments/cancel`);
+  console.log(`   POST http://localhost:${PORT}/api/analyze/mood`);
   console.log(`\n✅ CORS enabled for http://127.0.0.1:5500`);
   console.log(`🌐 Open your app at: http://127.0.0.1:5500/appointments.html`);
   console.log(`========================================\n`);
