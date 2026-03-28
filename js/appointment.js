@@ -52,9 +52,24 @@ async function initFirebase() {
         await handleFirebaseUser(user, idToken);
       } else {
         console.log("👤 Firebase auth state changed: user signed out");
+        // Handle sign-out: clear storage and reset UI
         if (localStorage.getItem("mindmate_id_token")) {
           localStorage.clear();
-          window.location.reload();
+          
+          // Reset UI without reload for immediate feedback
+          const authContainer = document.getElementById("auth-container");
+          if (authContainer) authContainer.style.display = "block";
+          
+          const userInfoDiv = document.getElementById("user-info");
+          if (userInfoDiv) userInfoDiv.style.display = "none";
+          
+          const therapistList = document.getElementById("therapist-list");
+          if (therapistList) therapistList.innerHTML = "";
+          
+          const bookingsList = document.getElementById("bookings-list");
+          if (bookingsList) bookingsList.innerHTML = "";
+          
+          console.log("✅ UI reset after sign-out");
         }
       }
     });
@@ -137,13 +152,15 @@ async function handleFirebaseUser(user, idToken) {
         </div>
       `;
 
-      document.getElementById("logout-btn")?.addEventListener("click", async () => {
-        if (firebaseAuth) {
-          await firebaseAuth.signOut();
-        }
-        localStorage.clear();
-        window.location.reload();
-      });
+      const logoutBtn = document.getElementById("logout-btn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+          console.log("👤 Sign-out initiated");
+          if (firebaseAuth) {
+            await firebaseAuth.signOut();
+          }
+        });
+      }
     }
 
     if (message) {
@@ -299,13 +316,15 @@ window.handleCredentialResponse = async (response) => {
         </div>
       `;
 
-      document.getElementById("logout-btn")?.addEventListener("click", async () => {
-        if (firebaseAuth) {
-          await firebaseAuth.signOut();
-        }
-        localStorage.clear();
-        window.location.reload();
-      });
+      const logoutBtn = document.getElementById("logout-btn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+          console.log("👤 Sign-out initiated");
+          if (firebaseAuth) {
+            await firebaseAuth.signOut();
+          }
+        });
+      }
     }
 
     const message = document.getElementById("booking-message");
@@ -426,6 +445,9 @@ async function loadTherapists() {
 
     console.log(`✅ Loaded ${data.therapists.length} therapists`);
 
+    // Ensure container is visible
+    container.style.display = "block";
+    
     container.innerHTML = data.therapists.map(therapist => `
       <div class="therapist-card" data-id="${therapist.id}">
         <div class="therapist-header">
@@ -845,13 +867,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
 
-      document.getElementById("logout-btn")?.addEventListener("click", async () => {
-        if (firebaseAuth) {
-          await firebaseAuth.signOut();
-        }
-        localStorage.clear();
-        window.location.reload();
-      });
+      const logoutBtn = document.getElementById("logout-btn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+          console.log("👤 Sign-out initiated");
+          if (firebaseAuth) {
+            await firebaseAuth.signOut();
+          }
+        });
+      }
     }
 
     // Initialize Firebase for logout functionality
