@@ -153,7 +153,10 @@ async function handleFirebaseUser(user, idToken) {
     }
 
     // Load therapists and existing bookings list
-    await loadTherapists();
+    const therapistContainer = document.getElementById("therapist-list");
+    if (!therapistContainer || !therapistContainer.children.length || therapistContainer.querySelector('.error, .no-therapists')) {
+      await loadTherapists();
+    }
     setupBookingForm();
     await loadUserBookings();
 
