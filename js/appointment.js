@@ -74,9 +74,9 @@ async function handleFirebaseUser(user, idToken) {
     console.log("⚠️ Verification already in progress, skipping...");
     return;
   }
-  
+
   isVerifying = true;
-  
+
   try {
     const message = document.getElementById("booking-message");
     if (message) {
@@ -230,7 +230,7 @@ window.handleCredentialResponse = async (response) => {
     console.log("⚠️ Verification already in progress, skipping...");
     return;
   }
-  
+
   try {
     console.log("🔐 Google One-Tap response received");
 
@@ -589,7 +589,7 @@ function setupBookingForm() {
     // 3. UI Lock: Disable button immediately to prevent double-booking (409 errors)
     submitBtn.disabled = true;
     submitBtn.textContent = "Booking...";
-    
+
     if (message) {
       message.textContent = "📅 Confirming your appointment...";
       message.style.color = "#555"; // Neutral color during processing
@@ -618,12 +618,20 @@ function setupBookingForm() {
         body: JSON.stringify(body),
       });
 
+      // In appointment.js, around line 626, replace the error handling:
       const data = await res.json();
 
       // Handle specific HTTP errors
       if (!res.ok) {
         if (res.status === 409) {
-          throw new Error("This slot was just booked by someone else. Please pick another.");
+          // Check what specific error message came from the server
+          if (data.error === "This time slot has already been booked") {
+            throw new Error("This time slot was just booked by someone else. Please pick another.");
+          } else if (data.error === "You already have a booking at this time") {
+            throw new Error("You already have a booking scheduled at this time. Please select a different time.");
+          } else {
+            throw new Error(data.error || "This slot is no longer available. Please pick another.");
+          }
         }
         throw new Error(data.error || "Booking failed");
       }
@@ -644,7 +652,7 @@ function setupBookingForm() {
 
       // Success: Change button text but keep it disabled to prevent a duplicate second booking
       submitBtn.textContent = "Booked!";
-      
+
     } catch (err) {
       // 6. Error Handling
       console.error("Booking Error:", err);
@@ -652,7 +660,7 @@ function setupBookingForm() {
         message.textContent = `❌ ${err.message}`;
         message.style.color = "red";
       }
-      
+
       // Re-enable button ONLY on error so the user can try again
       submitBtn.disabled = false;
       submitBtn.textContent = originalBtnText;

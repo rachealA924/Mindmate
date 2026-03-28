@@ -11,7 +11,9 @@ export default async function handler(req, res) {
     const user = await requireAuth(req);
     const { fullname, email, type, date, time, therapistId, slotId, notes } = req.body;
     
-    // 1. Pre-Transaction Check: Fast query to see if user is double-booking themselves
+    console.log(`📝 Booking request for user: ${user.uid}, slot: ${slotId}, date: ${date}, time: ${time}`);
+    
+    // 1. Pre-Transaction Check
     const existing = await db.collection("appointments")
       .where("userId", "==", user.uid)
       .where("date", "==", date)
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
       .get();
     
     if (!existing.empty) {
+      console.log(`⚠️ User ${user.uid} already has booking at ${date} ${time}`);
       return res.status(409).json({ error: "You already have a booking at this time" });
     }
 
@@ -27,12 +30,20 @@ export default async function handler(req, res) {
     
     // 2. The Atomic Transaction
     const result = await db.runTransaction(async (transaction) => {
-      const slotDoc = await transaction.get(slotRef); // READ FIRST
+      const slotDoc = await transaction.get(slotRef);
       
-      if (!slotDoc.exists) throw new Error("Time slot not found");
+      if (!slotDoc.exists) {
+        console.log(`❌ Slot ${slotId} not found`);
+        throw new Error("Time slot not found");
+      }
       
       const slot = slotDoc.data();
-      if (slot.isBooked) throw new Error("This time slot has already been booked");
+      console.log(`🔍 Slot status: isBooked=${slot.isBooked}, bookedBy=${slot.bookedBy || 'none'}`);
+      
+      if (slot.isBooked) {
+        console.log(`❌ Slot ${slotId} already booked by ${slot.bookedBy}`);
+        throw new Error("This time slot has already been booked");
+      }
 
       // WRITE LAST
       const appointmentRef = db.collection("appointments").doc();
@@ -56,6 +67,7 @@ export default async function handler(req, res) {
         createdAt: new Date().toISOString()
       });
       
+      console.log(`✅ Successfully booked slot ${slotId} for user ${user.uid}`);
       return { appointmentId: appointmentRef.id };
     });
 
@@ -70,7 +82,7 @@ export default async function handler(req, res) {
     });
     
   } catch (err) {
-    console.error("Booking error details:", err.message);
+    console.error("❌ Booking error details:", err.message);
     
     // Distinguish between conflict and server error
     if (err.message === "This time slot has already been booked") {
@@ -80,7 +92,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error during booking." });
   }
 }
-
 // Helper function for calendar integration
 async function createCalendarEvent({ userId, fullname, email, type, date, time, therapistId }) {
   try {
