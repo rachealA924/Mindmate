@@ -61,6 +61,24 @@ async function initFirebase() {
         const authContainer = document.getElementById("auth-container");
         if (authContainer) {
           authContainer.style.display = "block";
+          // Re-initialize Google Sign-In button if it's available
+          if (window.google && window.google.accounts) {
+            const clientId = "443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com";
+            const buttonElement = document.getElementById("google-signin-button");
+            if (buttonElement && !buttonElement.hasChildNodes()) {
+              window.google.accounts.id.renderButton(
+                buttonElement,
+                {
+                  type: "standard",
+                  theme: "outline",
+                  size: "large",
+                  text: "continue_with",
+                  shape: "rectangular",
+                  logo_alignment: "left"
+                }
+              );
+            }
+          }
         }
         
         const userInfoDiv = document.getElementById("user-info");
@@ -72,11 +90,19 @@ async function initFirebase() {
         // Clear and restore loading state for therapist list
         const therapistList = document.getElementById("therapist-list");
         if (therapistList) {
-          therapistList.innerHTML = '<div class="loading">Loading therapists...</div>';
+          therapistList.innerHTML = '';
           therapistList.style.display = "none";
           
           const therapistSection = therapistList.closest(".therapist-selector");
-          if (therapistSection) therapistSection.style.display = "none";
+          if (therapistSection) {
+            // Show login prompt instead of therapists
+            therapistSection.innerHTML = `
+              <h2>Choose Your Therapist</h2>
+              <div class="login-prompt">
+                <p>🔐 Please sign in to book an appointment with our therapists.</p>
+              </div>
+            `;
+          }
         }
         
         // Clear bookings
@@ -96,10 +122,10 @@ async function initFirebase() {
           bookingForm.style.display = "none";
         }
         
-        // Hide fallback auth button
+        // Show fallback auth button
         const fallback = document.getElementById("firebase-auth-fallback");
         if (fallback) {
-          fallback.style.display = "none";
+          fallback.style.display = "block";
         }
         
         console.log("✅ UI reset after sign-out");
@@ -201,11 +227,23 @@ async function handleFirebaseUser(user, idToken) {
       setTimeout(() => message.textContent = "", 3000);
     }
 
-    // Load therapists and existing bookings list
-    // Skip if already loaded to avoid race conditions
-    if (!therapistsLoaded) {
-      await loadTherapists();
+    // CRITICAL FIX: Reset and reload the therapist selector section
+    const therapistSelector = document.querySelector(".therapist-selector");
+    if (therapistSelector) {
+      // Restore the original HTML structure
+      therapistSelector.innerHTML = `
+        <h2>Choose Your Therapist</h2>
+        <div id="therapist-list" class="therapist-grid">
+          <div class="loading">Loading therapists...</div>
+        </div>
+      `;
     }
+    
+    // Reset the loaded flag to force reload
+    therapistsLoaded = false;
+    
+    // Load therapists and existing bookings list
+    await loadTherapists();
     setupBookingForm();
     await loadUserBookings();
 
@@ -472,7 +510,10 @@ async function loadTherapists() {
     const data = await res.json();
     const container = document.getElementById("therapist-list");
 
-    if (!container) return;
+    if (!container) {
+      console.error("❌ Therapist list container not found");
+      return;
+    }
 
     if (!data.therapists || data.therapists.length === 0) {
       container.innerHTML = '<p class="no-therapists">No therapists available at the moment. Please check back later.</p>';
