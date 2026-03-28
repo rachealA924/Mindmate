@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "description": "MindMate serverless backend — Vercel Functions",
+  "scripts": {
+    "seed": "node scripts/seedDatabase.js",
+    "test:firebase": "node scripts/test-firebase.js",
+    "update:sarah": "node scripts/update-sarah.js",
+    "deploy": "vercel deploy --prod"
+  },
   "dependencies": {
     "firebase-admin": "^12.0.0",
     "nodemailer": "^6.9.0"

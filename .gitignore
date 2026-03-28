@@ -1,2 +1,5 @@
 booking.js
 js/firebase-config.js
+service-account-key.json
+.vercel
+.env*.local

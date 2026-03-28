@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upgrade to Premium - MindMate</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>...</header>
+  
+  <main class="premium-page">
+    <h1>✨ Upgrade to MindMate Premium ✨</h1>
+    
+    <div class="pricing-card">
+      <h2>Premium Plan</h2>
+      <div class="price">$9.99<span>/month</span></div>
+      <ul>
+        <li>✓ Unlimited mood analysis</li>
+        <li>✓ Priority booking with premium therapists</li>
+        <li>✓ Personalized mental health insights</li>
+        <li>✓ Downloadable resources and guides</li>
+        <li>✓ 24/7 chat support</li>
+      </ul>
+      <button id="subscribe-btn" class="btn-premium">Subscribe Now</button>
+    </div>
+  </main>
+  
+  <script>
+    document.getElementById("subscribe-btn")?.addEventListener("click", async () => {
+      // Implement Stripe/PayPal integration here
+      // After successful payment, update Firestore user.premium = true
+      alert("Payment integration would go here. Demo mode.");
+    });
+  </script>
+</body>
+</html>

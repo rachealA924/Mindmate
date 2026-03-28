@@ -1,27 +1,72 @@
-// api/analyze/mood.js
-// POST /api/analyze/mood  — server-side sentiment analysis with richer NLP
+// api/analyze/mood.js - Updated with rate limiting
+import { db } from "../../lib/firebase-admin.js";
+import { checkRateLimitFirestore, recordUsage } from "../../lib/rate-limit.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const { text } = req.body;
-
-    if (!text?.trim()) {
-      return res.status(400).json({ error: "text field is required." });
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: "Text is required for analysis" });
     }
-
-    const result = analyzeSentiment(text.trim());
-
-    return res.status(200).json(result);
+    
+    // Get user ID from auth token if available
+    let userId = null;
+    let isPremium = false;
+    
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.split(" ")[1];
+        // Verify token and get user
+        const admin = await import("firebase-admin");
+        const decodedToken = await admin.getAuth().verifyIdToken(token);
+        userId = decodedToken.uid;
+        
+        // Check if user is premium
+        const userDoc = await db.collection("users").doc(userId).get();
+        isPremium = userDoc.exists && userDoc.data().premium === true;
+      }
+    } catch (err) {
+      console.warn("Auth optional for rate limiting:", err.message);
+    }
+    
+    // Apply rate limiting only for non-premium users
+    if (!isPremium) {
+      const rateLimit = await checkRateLimitFirestore(userId, db, 2);
+      
+      if (!rateLimit.allowed) {
+        return res.status(429).json({
+          error: "Free tier limit reached. Upgrade to Premium for unlimited mood analysis.",
+          premiumPrompt: true,
+          remaining: 0,
+          message: "You've used your 2 free mood analyses. Upgrade to Premium for unlimited access!"
+        });
+      }
+    }
+    
+    // Perform sentiment analysis (your existing logic)
+    const analysis = await analyzeSentiment(text);
+    
+    // Record usage for non-premium users
+    if (!isPremium && userId) {
+      await recordUsage(userId, db, "mood_analysis");
+    }
+    
+    return res.status(200).json({
+      ...analysis,
+      usageRemaining: isPremium ? "unlimited" : (2 - (rateLimit?.totalUsed || 0)),
+      isPremium
+    });
+    
   } catch (err) {
     console.error("Mood analysis error:", err);
-    return res.status(500).json({ error: "Analysis failed." });
+    return res.status(500).json({ error: err.message || "Analysis failed" });
   }
 }
 

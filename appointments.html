@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Book an Appointment - MindMate</title>
   <link rel="stylesheet" href="css/style.css" />
-  <script src="js/main.js" defer></script>
 </head>
+
 <body>
   <header>
     <nav aria-label="Primary navigation">
@@ -26,53 +27,49 @@
 
   <main>
     <section class="booking-intro">
-      <img 
-        src="images/calendar-schedule-list.jpg" 
-        alt="Booking a session illustration" 
-        class="booking-image" 
-        loading="lazy" 
-        width="400" 
-        height="250"
-      />
+      <img src="images/calendar-schedule-list.jpg" alt="Booking a session illustration" class="booking-image"
+        loading="lazy" width="400" height="250" />
       <div>
         <h2>Book a Session</h2>
         <p>Find time with a licensed therapist or wellness coach. All sessions are private and confidential.</p>
       </div>
     </section>
 
-    <section class="booking-form" aria-labelledby="booking-form-title">
+    <!-- Authentication container -->
+    <div id="auth-container" class="auth-container">
+      <div id="google-signin-button"></div>
+    </div>
 
-      <!-- Google Identity Services Sign-In -->
-      <div id="g_id_onload"
-           data-client_id="443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
+    <div id="user-info" style="display: none;"></div>
+    
+    <!-- Alternative Firebase Auth Button (appears if GSI fails) -->
+    <div id="firebase-auth-fallback" style="display: none; text-align: center; margin-top: 1rem;">
+      <button id="firebase-login-btn" class="btn-primary">Sign in with Google (Alternative)</button>
+    </div>
+
+    <section class="therapist-selector" aria-label="Choose your therapist">
+      <h2>Choose Your Therapist</h2>
+      <p>Select from our licensed mental health professionals</p>
+      <div id="therapist-list" class="therapist-grid">
+        <div class="loading">Loading therapists...</div>
       </div>
+    </section>
 
-      <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="Continue with Google">></div>
-
-      <h2 id="booking-form-title" class="visually-hidden">Appointment Booking Form</h2>
+    <section class="booking-form" aria-labelledby="booking-form-title" style="display: none;">
+      <h2 id="booking-form-title">Book Your Session</h2>
       <form action="#" method="POST" novalidate>
         <label for="fullname">Full Name</label>
         <input type="text" id="fullname" name="fullname" required autocomplete="name" />
 
         <label for="email">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          placeholder="you@example.com" 
-          required 
-          autocomplete="email"
-          pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
-          title="Please enter a valid email address"
-        />
+        <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email"
+          pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Please enter a valid email address" />
 
         <label for="type">Type of Session</label>
         <select id="type" name="type">
-          <option value="therapy">Therapy</option>
-          <option value="counseling">Counseling</option>
-          <option value="nutrition">Nutrition Support</option>
+          <option value="individual">Individual Therapy</option>
+          <option value="couples">Couples Therapy</option>
+          <option value="counseling">Counseling Session</option>
         </select>
 
         <label for="date">Preferred Date</label>
@@ -82,12 +79,7 @@
         <input type="time" id="time" name="time" required />
 
         <label for="notes">Additional Notes</label>
-        <textarea 
-          id="notes" 
-          name="notes" 
-          rows="4" 
-          placeholder="Let us know anything important..."
-        ></textarea>
+        <textarea id="notes" name="notes" rows="4" placeholder="Let us know anything important..."></textarea>
 
         <button type="submit">Book Appointment</button>
         <div id="booking-message" role="alert" aria-live="polite" style="margin-top:1rem;"></div>
@@ -99,10 +91,444 @@
     <p>&copy; 2025 MindMate. All rights reserved.</p>
   </footer>
 
-  <!-- Google Identity Services SDK -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-  <!-- Your appointment.js script -->
-  <script src="js/appointment.js" defer></script>
+  <!-- Load Google Identity Services FIRST -->
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  
+  <!-- Then load your main script -->
+  <script>
+    // Define API base
+    const API_BASE = "https://mindmate.vercel.app/api";
+    
+    // Global variables
+    let selectedTherapist = null;
+    let selectedSlot = null;
+    
+    // Google Sign-In callback - MUST be defined globally
+    window.handleCredentialResponse = async function(response) {
+      console.log("Google Sign-In response received", response);
+      
+      try {
+        const idToken = response.credential;
+        
+        // Show loading state
+        const message = document.getElementById("booking-message");
+        if (message) {
+          message.textContent = "🔐 Verifying your sign-in...";
+          message.style.color = "blue";
+        }
+        
+        console.log("Verifying token with backend...");
+        
+        // Verify token with backend
+        const verifyRes = await fetch(`${API_BASE}/auth/verify`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({ idToken })
+        });
+        
+        console.log("Verify response status:", verifyRes.status);
+        
+        const data = await verifyRes.json();
+        
+        if (!verifyRes.ok) {
+          throw new Error(data.error || "Verification failed");
+        }
+        
+        console.log("Verification successful:", data.user);
+        
+        // Store tokens
+        localStorage.setItem("mindmate_id_token", data.token || idToken);
+        localStorage.setItem("mindmate_user", data.user.email);
+        localStorage.setItem("mindmate_user_name", data.user.name);
+        
+        // Hide login container
+        const authContainer = document.getElementById("auth-container");
+        if (authContainer) authContainer.style.display = "none";
+        
+        // Show user info
+        const userInfoDiv = document.getElementById("user-info");
+        if (userInfoDiv) {
+          userInfoDiv.style.display = "block";
+          userInfoDiv.innerHTML = `
+            <div class="user-info-card">
+              <p>✅ Signed in as: <strong>${data.user.name || data.user.email}</strong></p>
+              <button id="logout-btn" class="logout-button">Sign Out</button>
+            </div>
+          `;
+          
+          document.getElementById("logout-btn")?.addEventListener("click", () => {
+            localStorage.clear();
+            window.location.reload();
+          });
+        }
+        
+        if (message) {
+          message.textContent = `✅ Welcome ${data.user.name || data.user.email}!`;
+          message.style.color = "green";
+          setTimeout(() => message.textContent = "", 3000);
+        }
+        
+        // Load therapists
+        await loadTherapists();
+        setupBookingForm();
+        
+      } catch (error) {
+        console.error("Sign-in error:", error);
+        const message = document.getElementById("booking-message");
+        if (message) {
+          message.textContent = `❌ Sign-in failed: ${error.message}`;
+          message.style.color = "red";
+        }
+        
+        // Show fallback button
+        const fallback = document.getElementById("firebase-auth-fallback");
+        if (fallback) fallback.style.display = "block";
+      }
+    };
+    
+    // Initialize Google Sign-In when the library is ready
+    function initGoogleSignIn() {
+      console.log("Initializing Google Sign-In...");
+      
+      if (!window.google || !window.google.accounts) {
+        console.log("Google Identity Services not ready yet, retrying in 1 second...");
+        setTimeout(initGoogleSignIn, 1000);
+        return;
+      }
+      
+      console.log("Google Identity Services is ready!");
+      
+      // Initialize Google Sign-In
+      window.google.accounts.id.initialize({
+        client_id: "443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com",
+        callback: window.handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+      
+      // Render the button
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-signin-button"),
+        { 
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "left"
+        }
+      );
+      
+      // Prompt for one-tap
+      window.google.accounts.id.prompt();
+      
+      console.log("Google Sign-In button rendered");
+    }
+    
+    // Load therapists function
+    async function loadTherapists() {
+      try {
+        const idToken = localStorage.getItem("mindmate_id_token");
+        if (!idToken) {
+          console.log("No token found");
+          return;
+        }
+        
+        console.log("Loading therapists...");
+        const res = await fetch(`${API_BASE}/therapists/list`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const data = await res.json();
+        const container = document.getElementById("therapist-list");
+        
+        if (!container) return;
+        
+        if (!data.therapists || data.therapists.length === 0) {
+          container.innerHTML = '<p class="no-therapists">No therapists available at the moment. Please check back later.</p>';
+          return;
+        }
+        
+        container.innerHTML = data.therapists.map(therapist => `
+          <div class="therapist-card" data-id="${therapist.id}">
+            <div class="therapist-header">
+              <img src="${therapist.photo || '/images/default-therapist.jpg'}" 
+                   alt="${therapist.name}" 
+                   onerror="this.src='/images/default-therapist.jpg'">
+              ${therapist.premiumOnly ? '<span class="premium-badge">⭐ Premium</span>' : ''}
+            </div>
+            <h3>${therapist.name}</h3>
+            <p class="specialization">${therapist.specialization || 'Mental Health Professional'}</p>
+            <p class="bio">${therapist.bio ? therapist.bio.substring(0, 100) : 'Experienced therapist dedicated to your mental wellness.'}...</p>
+            <button class="select-therapist-btn" data-id="${therapist.id}">View Availability</button>
+            <div class="available-slots" id="slots-${therapist.id}" style="display: none;">
+              <h4>Available Slots</h4>
+              <div class="slots-grid"></div>
+            </div>
+          </div>
+        `).join("");
+        
+        // Add event listeners to select buttons
+        document.querySelectorAll(".select-therapist-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const therapistId = btn.dataset.id;
+            selectedTherapist = data.therapists.find(t => t.id === therapistId);
+            
+            // Load slots for this therapist
+            await loadSlots(therapistId);
+            
+            // Show booking form
+            const bookingForm = document.querySelector(".booking-form");
+            if (bookingForm) {
+              bookingForm.style.display = "block";
+              const formTitle = bookingForm.querySelector("h2");
+              if (formTitle) formTitle.textContent = `Book with ${selectedTherapist.name}`;
+              bookingForm.scrollIntoView({ behavior: "smooth" });
+            }
+          });
+        });
+      } catch (err) {
+        console.error("Error loading therapists:", err);
+        const container = document.getElementById("therapist-list");
+        if (container) {
+          container.innerHTML = '<p class="error">❌ Unable to load therapists. Please try again later.</p>';
+        }
+      }
+    }
+    
+    async function loadSlots(therapistId) {
+      try {
+        const idToken = localStorage.getItem("mindmate_id_token");
+        const res = await fetch(`${API_BASE}/therapists/availability?therapistId=${therapistId}`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`
+          }
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        const slotsContainer = document.querySelector(`#slots-${therapistId} .slots-grid`);
+        
+        if (!slotsContainer) return;
+        
+        if (!data.slots || Object.keys(data.slots).length === 0) {
+          slotsContainer.innerHTML = '<p>No available slots for the next 7 days.</p>';
+          return;
+        }
+        
+        // Display slots grouped by date
+        let slotsHtml = '';
+        const sortedDates = Object.keys(data.slots).sort();
+        
+        for (const date of sortedDates) {
+          const slots = data.slots[date];
+          const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'short', 
+            day: 'numeric' 
+          });
+          
+          slotsHtml += `
+            <div class="date-group">
+              <h5>${formattedDate}</h5>
+              <div class="time-slots">
+          `;
+          
+          slots.forEach(slot => {
+            slotsHtml += `
+              <button class="time-slot" 
+                      data-slot-id="${slot.id}" 
+                      data-time="${slot.time}" 
+                      data-date="${date}">
+                ${slot.time}
+              </button>
+            `;
+          });
+          
+          slotsHtml += `</div></div>`;
+        }
+        
+        slotsContainer.innerHTML = slotsHtml;
+        
+        // Show slots container
+        const slotsDiv = document.getElementById(`slots-${therapistId}`);
+        if (slotsDiv) slotsDiv.style.display = "block";
+        
+        // Add time slot click handlers
+        document.querySelectorAll(".time-slot").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
+            btn.classList.add("selected");
+            
+            selectedSlot = {
+              id: btn.dataset.slotId,
+              time: btn.dataset.time,
+              date: btn.dataset.date
+            };
+            
+            // Pre-fill form
+            const dateInput = document.getElementById("date");
+            const timeInput = document.getElementById("time");
+            if (dateInput) dateInput.value = selectedSlot.date;
+            if (timeInput) timeInput.value = selectedSlot.time;
+          });
+        });
+      } catch (err) {
+        console.error("Error loading slots:", err);
+        const slotsContainer = document.querySelector(`#slots-${therapistId} .slots-grid`);
+        if (slotsContainer) {
+          slotsContainer.innerHTML = '<p class="error">❌ Failed to load availability. Please try again.</p>';
+        }
+      }
+    }
+    
+    function setupBookingForm() {
+      const form = document.querySelector(".booking-form form");
+      const message = document.getElementById("booking-message");
+      
+      if (!form) return;
+      
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (!selectedSlot) {
+          if (message) {
+            message.textContent = "❌ Please select a time slot first.";
+            message.style.color = "red";
+          }
+          return;
+        }
+        
+        const idToken = localStorage.getItem("mindmate_id_token");
+        if (!idToken) {
+          if (message) {
+            message.textContent = "❌ Please sign in to book an appointment.";
+            message.style.color = "red";
+          }
+          return;
+        }
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Booking...";
+        if (message) message.textContent = "📅 Confirming your appointment...";
+        
+        const body = {
+          fullname: form.fullname.value,
+          email: form.email.value,
+          type: form.type.value,
+          date: selectedSlot.date,
+          time: selectedSlot.time,
+          notes: form.notes.value,
+          therapistId: selectedTherapist.id,
+          slotId: selectedSlot.id
+        };
+        
+        try {
+          const res = await fetch(`${API_BASE}/appointments/book`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify(body),
+          });
+          
+          const data = await res.json();
+          
+          if (!res.ok) throw new Error(data.error || "Booking failed");
+          
+          if (message) {
+            message.innerHTML = `✅ ${data.message}<br><small>Check your email for confirmation.</small>`;
+            message.style.color = "green";
+          }
+          
+          form.reset();
+          selectedSlot = null;
+          
+          // Refresh slots
+          if (selectedTherapist) {
+            await loadSlots(selectedTherapist.id);
+          }
+          
+          // Clear selected slot styling
+          document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
+          
+        } catch (err) {
+          if (message) {
+            message.textContent = `❌ ${err.message}`;
+            message.style.color = "red";
+          }
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Book Appointment";
+        }
+      });
+    }
+    
+    // Initialize the page when DOM is ready
+    document.addEventListener("DOMContentLoaded", async () => {
+      console.log("Page loaded, checking auth state...");
+      
+      // Check if user is signed in
+      const idToken = localStorage.getItem("mindmate_id_token");
+      const userEmail = localStorage.getItem("mindmate_user");
+      
+      if (idToken && userEmail) {
+        console.log("User already signed in:", userEmail);
+        
+        // Hide login container
+        const authContainer = document.getElementById("auth-container");
+        if (authContainer) authContainer.style.display = "none";
+        
+        // Show user info
+        const userInfoDiv = document.getElementById("user-info");
+        if (userInfoDiv) {
+          userInfoDiv.style.display = "block";
+          userInfoDiv.innerHTML = `
+            <div class="user-info-card">
+              <p>✅ Signed in as: <strong>${localStorage.getItem("mindmate_user_name") || userEmail}</strong></p>
+              <button id="logout-btn" class="logout-button">Sign Out</button>
+            </div>
+          `;
+          
+          document.getElementById("logout-btn")?.addEventListener("click", () => {
+            localStorage.clear();
+            window.location.reload();
+          });
+        }
+        
+        await loadTherapists();
+        setupBookingForm();
+      } else {
+        console.log("User not signed in, initializing Google Sign-In...");
+        
+        // Start the initialization process
+        initGoogleSignIn();
+        
+        // Show login prompt
+        const therapistSelector = document.querySelector(".therapist-selector");
+        if (therapistSelector) {
+          therapistSelector.innerHTML = `
+            <div class="login-prompt">
+              <p>🔐 Please sign in to book an appointment with our therapists.</p>
+            </div>
+          `;
+        }
+      }
+    });
+  </script>
 </body>
+
 </html>

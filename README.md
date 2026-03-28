@@ -28,7 +28,7 @@ Important Disclaimer: This application is for educational purposes only and shou
 
   3. DEMO
 A link to a demo video (demonstrating how to use application locally and how to access it online) : If it fails to play copy the link manually and run it in a new tab:
-🎥 Demo Video Link: [https://www.canva.com/design/DAGvADjOAjg/hNuptDNknwl1qEHaSd2DvA/watch?utm_content=DAGvADjOAjg&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5eb076e113]
+🎥 Demo Video Link: [https://www.canva.com/design/DAGvADjOAjg/hNuptDNknwl1qEHaSd2DvA/watch?utm_content=DAGvADjOAjg& utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5eb076e113]
 
 🌐 Live Mindmate App via Load Balancer: [http://13.221.147.237/]
 
