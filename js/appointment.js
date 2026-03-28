@@ -1,6 +1,6 @@
 // appointment.js - Complete version with Firebase Auth
 // Production configuration
-const API_BASE = 'https://mindmate.vercel.app';
+const API_BASE = window.location.origin;
 
 console.log('========================================');
 console.log(`🌐 Environment: PRODUCTION`);
@@ -38,17 +38,13 @@ async function initFirebase() {
 
     const app = firebaseAppModule.initializeApp(firebaseConfig);
     firebaseAuth = firebaseAuthModule.getAuth(app);
-    const provider = new firebaseAuthModule.GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/calendar.events');
-    provider.setCustomParameters({ prompt: 'select_account' });
-
+    
     // Store auth instance globally
     window.firebaseAuth = firebaseAuth;
     window.firebaseInitialized = true;
 
     console.log("✅ Firebase initialized successfully");
 
-    // Listen to auth state changes
     // Listen to auth state changes
     firebaseAuthModule.onAuthStateChanged(firebaseAuth, async (user) => {
       if (user) {
@@ -57,7 +53,6 @@ async function initFirebase() {
         await handleFirebaseUser(user, idToken);
       } else {
         console.log("👤 Firebase auth state changed: user signed out");
-
         if (localStorage.getItem("mindmate_id_token")) {
           localStorage.clear();
           window.location.reload();
@@ -65,7 +60,7 @@ async function initFirebase() {
       }
     });
 
-    return { auth: firebaseAuth, provider };
+    return { auth: firebaseAuth };
   } catch (error) {
     console.error("❌ Failed to initialize Firebase:", error);
     isInitializing = false;
@@ -162,9 +157,13 @@ async function handleFirebaseUser(user, idToken) {
       if (error.message.includes('Failed to fetch')) {
         errorMsg = "Cannot connect to the server. Please check your internet connection or try again later.";
       }
-      message.innerHTML = `❌ Sign-in failed: ${errorMsg}`;
+      message.innerHTML = `❌ Sign-in failed: ${errorMsg}<br><small>Try clicking the "Alternative Sign-in" button below.</small>`;
       message.style.color = "red";
     }
+
+    // Show fallback button
+    const fallback = document.getElementById("firebase-auth-fallback");
+    if (fallback) fallback.style.display = "block";
   }
 }
 
@@ -184,10 +183,12 @@ async function signInWithFirebase() {
       throw new Error("Firebase initialization failed");
     }
 
-    const { auth, provider } = firebase;
     const firebaseAuthModule = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
+    const provider = new firebaseAuthModule.GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/calendar.events');
+    provider.setCustomParameters({ prompt: 'select_account' });
 
-    const result = await firebaseAuthModule.signInWithPopup(auth, provider);
+    const result = await firebaseAuthModule.signInWithPopup(firebaseAuth, provider);
     const user = result.user;
     const idToken = await user.getIdToken();
 
@@ -203,6 +204,8 @@ async function signInWithFirebase() {
         errorMsg = "Pop-up was blocked. Please allow pop-ups for this site and try again.";
       } else if (error.code === 'auth/cancelled-popup-request') {
         errorMsg = "Sign-in was cancelled. Please try again.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorMsg = "This domain is not authorized for Google Sign-In. Please contact support.";
       }
       message.innerHTML = `❌ Sign-in failed: ${errorMsg}`;
       message.style.color = "red";
@@ -210,7 +213,7 @@ async function signInWithFirebase() {
   }
 }
 
-// Google One-Tap Sign-In callback (fallback)
+// Google One-Tap Sign-In callback
 window.handleCredentialResponse = async function (response) {
   console.log("🔐 Google One-Tap response received");
 
@@ -326,28 +329,42 @@ function initGoogleSignIn() {
 
   const clientId = "443513007248-6dpgna6tkrjfgaugtranhbs3tvdb50p6.apps.googleusercontent.com";
 
+  // Initialize with more conservative settings
   window.google.accounts.id.initialize({
     client_id: clientId,
     callback: window.handleCredentialResponse,
     auto_select: false,
-    cancel_on_tap_outside: true
+    cancel_on_tap_outside: true,
+    // Remove itp_support if it's causing issues
+    // itp_support: true
   });
 
-  window.google.accounts.id.renderButton(
-    document.getElementById("google-signin-button"),
-    {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      text: "continue_with",
-      shape: "rectangular",
-      logo_alignment: "left"
-    }
-  );
+  // Only render the button if the element exists
+  const buttonElement = document.getElementById("google-signin-button");
+  if (buttonElement) {
+    window.google.accounts.id.renderButton(
+      buttonElement,
+      {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        logo_alignment: "left"
+      }
+    );
+    console.log("✅ Google Sign-In button rendered");
+  } else {
+    console.warn("⚠️ Google sign-in button element not found");
+  }
 
-  window.google.accounts.id.prompt();
-
-  console.log("✅ Google Sign-In button rendered");
+  // Try to show One-Tap, but don't rely on it
+  try {
+    window.google.accounts.id.prompt();
+    console.log("📱 One-Tap prompt displayed");
+  } catch (promptError) {
+    console.warn("⚠️ Could not display One-Tap prompt:", promptError);
+  }
 }
 
 // Load therapists
@@ -651,7 +668,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Initialize Firebase for sign-in
     await initFirebase();
-    initGoogleSignIn();
+    
+    // Only initialize Google Sign-In if we're on a valid domain
+    const allowedDomains = ['mindmate-sum.vercel.app', 'mindmate-navy.vercel.app', 'mindmate.vercel.app'];
+    const currentHost = window.location.hostname;
+    
+    if (allowedDomains.includes(currentHost) || currentHost === 'localhost') {
+      initGoogleSignIn();
+    } else {
+      console.warn(`⚠️ Domain ${currentHost} not in allowed list for One-Tap. Using fallback only.`);
+    }
+    
     setupFallbackSignIn();
 
     const therapistSelector = document.querySelector(".therapist-selector");
