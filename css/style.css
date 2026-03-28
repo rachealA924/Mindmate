@@ -1067,6 +1067,39 @@ hr {
   margin: 0.5rem 0;
 }
 
+.booking-item {
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text);
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+}
+
+.booking-item p {
+  margin: 0.3rem 0;
+}
+
+.cancel-btn {
+  background-color: var(--error);
+  border: none;
+  color: #fff;
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-btn:hover {
+  background-color: #b33d3d;
+}
+
+body.dark-mode .cancel-btn {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+
 .btn-premium {
   background: #ffd700;
   color: #333;

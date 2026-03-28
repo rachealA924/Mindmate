@@ -521,7 +521,7 @@ async function loadUserBookings() {
       if (bookingsContainer) bookingsContainer.style.display = "block";
       if (bookingsList) {
         bookingsList.innerHTML = data.bookings.map(booking => `
-          <div class="booking-item" style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; border-radius: 5px; background:#fff;">
+          <div class="booking-item">
             <p><strong>📅 ${booking.date}</strong> at <strong>⏰ ${booking.time}</strong></p>
             <p>👤 ${booking.therapistName || 'Therapist'}</p>
             <p>Status: ${booking.status || 'confirmed'}</p>
@@ -563,8 +563,15 @@ async function cancelBooking(bookingId) {
       return;
     }
 
-    const data = await res.json();
-    alert(`Failed to cancel: ${data.error || 'Unknown error'}`);
+    let errMsg = 'Unknown error';
+    try {
+      const data = await res.json();
+      errMsg = data.error || errMsg;
+    } catch (_) {
+      errMsg = `Unexpected response from server (status ${res.status})`;
+    }
+
+    alert(`Failed to cancel: ${errMsg}`);
   } catch (err) {
     console.error("Error cancelling booking:", err);
     alert("Failed to cancel appointment");
@@ -749,9 +756,10 @@ function setupBookingForm() {
             throw new Error("This time slot was just booked by someone else. Please pick another.");
           } else if (data.error === "You already have a booking at this time") {
             const existingBookings = await fetchUserBookings();
-            const conflictingBooking = existingBookings.find(
-              booking => booking.date === selectedSlot.date && booking.time === selectedSlot.time
-            );
+            const conflictingBooking = existingBookings.find((booking) => {
+              if (!booking || !booking.date || !booking.time) return false;
+              return booking.date === selectedSlot.date && booking.time === selectedSlot.time;
+            });
 
             let errorMsg = "You already have a booking scheduled at this time.";
             if (conflictingBooking) {
