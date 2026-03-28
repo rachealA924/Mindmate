@@ -1,5 +1,5 @@
 // sentiment.js - Updated with premium prompts
-const API_BASE = "https://mindmate.vercel.app/api";
+const API_BASE = window.location.origin;
 
 document.addEventListener("DOMContentLoaded", () => {
   const moodForm = document.getElementById("mood-form");

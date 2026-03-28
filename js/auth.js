@@ -2,7 +2,7 @@
 import { auth, provider } from './firebase-config.js';
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-const API_BASE = "https://mindmate.vercel.app/api";
+const API_BASE = window.location.origin;
 
 // Check auth state on page load
 document.addEventListener("DOMContentLoaded", () => {

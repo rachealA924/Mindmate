@@ -1,7 +1,7 @@
 // form-validation.js  (UPDATED — replaces the old version)
 // Sends contact form to backend API instead of Formspree
 
-const API_BASE = "https://mindmate.vercel.app/api";
+const API_BASE = window.location.origin;
 
 document.addEventListener("DOMContentLoaded", () => {
   // ─── General validation for all forms ─────────────────────────────────────

@@ -152,7 +152,11 @@ async function handleFirebaseUser(user, idToken) {
       setTimeout(() => message.textContent = "", 3000);
     }
 
-    // Load therapists and existing bookings list
+    let errorMsg = "You already have a booking scheduled at this time.";
+    if (conflictingBooking) {
+      errorMsg += `…Existing booking:\n📅 ${conflictingBooking.date}\n⏰ ${conflictingBooking.time}\n…`;
+    }
+    throw new Error(errorMsg);    // Load therapists and existing bookings list
     await loadTherapists();
     setupBookingForm();
     await loadUserBookings();
