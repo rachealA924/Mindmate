@@ -53,8 +53,11 @@ async function initFirebase() {
         await handleFirebaseUser(user, idToken);
       } else {
         console.log("👤 Firebase auth state changed: user signed out");
-        // Always reset UI on sign-out
-        localStorage.clear();
+        // Clear only mindmate-related localStorage keys, preserve theme
+        localStorage.removeItem("mindmate_id_token");
+        localStorage.removeItem("mindmate_user");
+        localStorage.removeItem("mindmate_user_name");
+        localStorage.removeItem("mindmate_user_data");
         therapistsLoaded = false; // Reset the therapists loaded flag
         
         // Reset UI without reload for immediate feedback
