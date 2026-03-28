@@ -9,11 +9,19 @@ export default async function handler(req, res) {
   try {
     const user = await requireAuth(req);
 
-    const appointmentsSnapshot = await db.collection("appointments")
-      .where("userId", "==", user.uid)
-      .orderBy("date", "desc")
-      .orderBy("time", "desc")
-      .get();
+    let appointmentsSnapshot;
+    try {
+      appointmentsSnapshot = await db.collection("appointments")
+        .where("userId", "==", user.uid)
+        .orderBy("date", "desc")
+        .orderBy("time", "desc")
+        .get();
+    } catch (e) {
+      console.warn("User bookings orderBy caused error, falling back to unordered query:", e.message);
+      appointmentsSnapshot = await db.collection("appointments")
+        .where("userId", "==", user.uid)
+        .get();
+    }
 
     const bookings = [];
 
@@ -32,6 +40,15 @@ export default async function handler(req, res) {
         ...booking
       });
     }
+
+    // Ensure deterministic date/time sorting even in fallback path
+    bookings.sort((a, b) => {
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      if (a.time > b.time) return -1;
+      if (a.time < b.time) return 1;
+      return 0;
+    });
 
     return res.status(200).json({
       success: true,
