@@ -606,6 +606,31 @@ function setupBookingForm() {
       slotId: selectedSlot.id
     };
 
+    console.log("📤 Booking request payload:", {
+      fullname: form.fullname.value,
+      email: form.email.value,
+      type: form.type.value,
+      date: selectedSlot.date,
+      time: selectedSlot.time,
+      therapistId: selectedTherapist.id,
+      slotId: selectedSlot.id
+    });
+
+    const res = await fetch(`${API_BASE}/api/appointments/book`, {
+      method: "POST",
+      mode: 'cors',
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(body),
+    });
+
+    console.log("📥 Response status:", res.status);
+    const data = await res.json();
+    console.log("📥 Response data:", data);
+
     try {
       const res = await fetch(`${API_BASE}/api/appointments/book`, {
         method: "POST",
@@ -618,7 +643,6 @@ function setupBookingForm() {
         body: JSON.stringify(body),
       });
 
-      // In appointment.js, around line 626, replace the error handling:
       const data = await res.json();
 
       // Handle specific HTTP errors
