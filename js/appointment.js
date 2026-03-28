@@ -12,6 +12,7 @@ let currentUser = null;
 let firebaseAuth = null;
 let isInitializing = false;
 let isVerifying = false; // FIX 3: Add verification lock
+let therapistsLoaded = false; // Track if therapists have been loaded
 
 // Import Firebase dynamically
 async function initFirebase() {
@@ -52,25 +53,56 @@ async function initFirebase() {
         await handleFirebaseUser(user, idToken);
       } else {
         console.log("👤 Firebase auth state changed: user signed out");
-        // Handle sign-out: clear storage and reset UI
-        if (localStorage.getItem("mindmate_id_token")) {
-          localStorage.clear();
-          
-          // Reset UI without reload for immediate feedback
-          const authContainer = document.getElementById("auth-container");
-          if (authContainer) authContainer.style.display = "block";
-          
-          const userInfoDiv = document.getElementById("user-info");
-          if (userInfoDiv) userInfoDiv.style.display = "none";
-          
-          const therapistList = document.getElementById("therapist-list");
-          if (therapistList) therapistList.innerHTML = "";
-          
-          const bookingsList = document.getElementById("bookings-list");
-          if (bookingsList) bookingsList.innerHTML = "";
-          
-          console.log("✅ UI reset after sign-out");
+        // Always reset UI on sign-out
+        localStorage.clear();
+        therapistsLoaded = false; // Reset the therapists loaded flag
+        
+        // Reset UI without reload for immediate feedback
+        const authContainer = document.getElementById("auth-container");
+        if (authContainer) {
+          authContainer.style.display = "block";
         }
+        
+        const userInfoDiv = document.getElementById("user-info");
+        if (userInfoDiv) {
+          userInfoDiv.style.display = "none";
+          userInfoDiv.innerHTML = "";
+        }
+        
+        // Clear and restore loading state for therapist list
+        const therapistList = document.getElementById("therapist-list");
+        if (therapistList) {
+          therapistList.innerHTML = '<div class="loading">Loading therapists...</div>';
+          therapistList.style.display = "none";
+          
+          const therapistSection = therapistList.closest(".therapist-selector");
+          if (therapistSection) therapistSection.style.display = "none";
+        }
+        
+        // Clear bookings
+        const existingBookings = document.getElementById("existing-bookings");
+        if (existingBookings) {
+          existingBookings.style.display = "none";
+        }
+        
+        const bookingsList = document.getElementById("bookings-list");
+        if (bookingsList) {
+          bookingsList.innerHTML = "";
+        }
+        
+        // Hide booking form
+        const bookingForm = document.querySelector(".booking-form");
+        if (bookingForm) {
+          bookingForm.style.display = "none";
+        }
+        
+        // Hide fallback auth button
+        const fallback = document.getElementById("firebase-auth-fallback");
+        if (fallback) {
+          fallback.style.display = "none";
+        }
+        
+        console.log("✅ UI reset after sign-out");
       }
     });
 
@@ -170,7 +202,10 @@ async function handleFirebaseUser(user, idToken) {
     }
 
     // Load therapists and existing bookings list
-    await loadTherapists();
+    // Skip if already loaded to avoid race conditions
+    if (!therapistsLoaded) {
+      await loadTherapists();
+    }
     setupBookingForm();
     await loadUserBookings();
 
@@ -334,9 +369,10 @@ window.handleCredentialResponse = async (response) => {
       setTimeout(() => message.textContent = "", 3000);
     }
 
-    // Load therapists
+    // Load therapists and user bookings
     await loadTherapists();
     setupBookingForm();
+    await loadUserBookings();
 
   } catch (error) {
     console.error("❌ Sign-in error:", error);
@@ -445,8 +481,10 @@ async function loadTherapists() {
 
     console.log(`✅ Loaded ${data.therapists.length} therapists`);
 
-    // Ensure container is visible
+    // Ensure container and section are visible
     container.style.display = "block";
+    const therapistSection = container.closest(".therapist-selector");
+    if (therapistSection) therapistSection.style.display = "block";
     
     container.innerHTML = data.therapists.map(therapist => `
       <div class="therapist-card" data-id="${therapist.id}">
@@ -483,6 +521,11 @@ async function loadTherapists() {
         }
       });
     });
+
+    // Mark therapists as loaded
+    therapistsLoaded = true;
+    console.log("✅ Therapists loaded and displayed");
+
   } catch (err) {
     console.error("❌ Error loading therapists:", err);
     const container = document.getElementById("therapist-list");
