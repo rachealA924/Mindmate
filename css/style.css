@@ -1272,6 +1272,7 @@ body.dark-mode .cancel-btn {
   border-radius: 25px;
   cursor: pointer;
   font-size: 0.9rem;
+  color: var(--text);
   transition: all 0.2s ease;
 }
 
