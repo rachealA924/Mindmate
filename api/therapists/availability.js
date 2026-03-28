@@ -1,28 +1,10 @@
 // api/therapists/availability.js
 import { db } from "../../lib/firebase-admin.js";
+import { handleCors } from "../../lib/cors.js";
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  const origin = req.headers.origin;
-  
-  if (origin && (
-    origin.includes('localhost') || 
-    origin.includes('127.0.0.1') ||
-    origin === 'https://mindmate.vercel.app'
-  )) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  // Handle CORS first
+  if (handleCors(req, res)) return;
   
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -35,7 +17,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'therapistId is required' });
     }
     
-    // Get therapist details
     const therapistDoc = await db.collection('therapists').doc(therapistId).get();
     if (!therapistDoc.exists) {
       return res.status(404).json({ error: 'Therapist not found' });
@@ -43,7 +24,6 @@ export default async function handler(req, res) {
     
     const therapist = { id: therapistDoc.id, ...therapistDoc.data() };
     
-    // Build query for slots
     let query = db.collection('appointment_slots')
       .where('therapistId', '==', therapistId)
       .where('isBooked', '==', false);
@@ -71,7 +51,6 @@ export default async function handler(req, res) {
       price: doc.data().price
     }));
     
-    // Group slots by date
     const groupedSlots = {};
     slots.forEach(slot => {
       if (!groupedSlots[slot.date]) {

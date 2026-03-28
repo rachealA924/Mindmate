@@ -3,10 +3,9 @@ import { auth, db } from '../../lib/firebase-admin.js';
 import { handleCors } from '../../lib/cors.js';
 
 export default async function handler(req, res) {
-  // Handle CORS - this must be FIRST
+  // Handle CORS first to prevent preflight failures
   if (handleCors(req, res)) return;
   
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
@@ -18,10 +17,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'idToken is required.' });
     }
 
-    // Verify the ID token
     const decoded = await auth.verifyIdToken(idToken);
-
-    // Get or create user
     const userRef = db.collection('users').doc(decoded.uid);
     const userDoc = await userRef.get();
     
