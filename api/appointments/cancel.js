@@ -27,12 +27,10 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "You are not authorized to cancel this booking" });
     }
 
-    await bookingRef.update({
-      status: "cancelled",
-      cancelledAt: new Date().toISOString()
-    });
+    // Delete the appointment document
+    await bookingRef.delete();
 
-    // (Optional) free up slot document if applicable
+    // Free up slot document if applicable
     if (booking.slotId) {
       const slotRef = db.collection("appointment_slots").doc(booking.slotId);
       await slotRef.update({
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
       }).catch(() => null);
     }
 
-    return res.status(200).json({ success: true, message: "Booking cancelled" });
+    return res.status(200).json({ success: true, message: "Booking cancelled and removed" });
   } catch (err) {
     console.error("Error cancelling booking:", err);
 

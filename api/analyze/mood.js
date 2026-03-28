@@ -1,6 +1,6 @@
 // api/analyze/mood.js - Updated with rate limiting
 import { db } from "../../lib/firebase-admin.js";
-import { checkRateLimitFirestore, recordUsage } from "../../lib/rate-limit.js";
+import { checkRateLimit, recordUsage } from "../../lib/rate-limit.js";
 import { handleCors } from "../../lib/cors.js";
 
 export default async function handler(req, res) {
@@ -35,8 +35,9 @@ export default async function handler(req, res) {
     }
     
     // Apply rate limiting only for non-premium users
+    let rateLimit = null;
     if (!isPremium) {
-      const rateLimit = await checkRateLimitFirestore(userId, db, 2);
+      rateLimit = await checkRateLimit(userId, 2);
       
       if (!rateLimit.allowed) {
         return res.status(429).json({
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
     
     // Record usage for non-premium users
     if (!isPremium && userId) {
-      await recordUsage(userId, db, "mood_analysis");
+      await recordUsage(userId, "mood_analysis");
     }
     
     return res.status(200).json({
