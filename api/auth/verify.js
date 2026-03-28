@@ -1,39 +1,14 @@
 // api/auth/verify.js
-import { auth, db } from "../../lib/firebase-admin.js";
+import { auth, db } from '../../lib/firebase-admin.js';
+import { handleCors } from '../../lib/cors.js';
 
 export default async function handler(req, res) {
-  // Set CORS headers - this is critical for localhost development
-  const origin = req.headers.origin;
+  // Handle CORS - this must be FIRST
+  if (handleCors(req, res)) return;
   
-  // Allow all localhost origins and your Vercel domains
-  if (origin && (
-    origin.includes('localhost') || 
-    origin.includes('127.0.0.1') ||
-    origin === 'https://mindmate.vercel.app' ||
-    origin === 'https://mindmate-sum.vercel.app' ||
-    origin === 'https://mindmate-navy.vercel.app' ||
-    origin === 'https://mindmate-git-main.vercel.app'
-  )) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else {
-    // Fallback for other origins
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  // These headers must be set for both preflight and actual requests
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours cache for preflight
-
-  // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Only allow POST requests
+  // Only allow POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
   try {
@@ -79,6 +54,9 @@ export default async function handler(req, res) {
     
   } catch (err) {
     console.error('Auth verify error:', err);
-    return res.status(401).json({ error: 'Token verification failed. Please sign in again.' });
+    return res.status(401).json({ 
+      error: 'Token verification failed. Please sign in again.',
+      details: err.message 
+    });
   }
 }

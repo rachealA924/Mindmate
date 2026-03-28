@@ -1,17 +1,19 @@
 // api/therapists/list.js
-import { db } from "../../lib/firebase-admin.js";
-import { requireAuth } from "../../lib/auth-middleware.js";
+import { db } from '../../lib/firebase-admin.js';
+import { requireAuth } from '../../lib/auth-middleware.js';
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  const origin = req.headers.origin;
+  // CORS headers
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'https://mindmate.vercel.app',
+    'https://mindmate-git-main.vercel.app'
+  ];
   
-  if (origin && (
-    origin.includes('localhost') || 
-    origin.includes('127.0.0.1') ||
-    origin === 'https://mindmate.vercel.app' ||
-    origin === 'https://mindmate-sum.vercel.app'
-  )) {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   } else {
@@ -22,7 +24,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -32,7 +33,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Optional authentication
+    // Optional authentication - get user if logged in
     let user = null;
     let isPremium = false;
     
@@ -41,7 +42,8 @@ export default async function handler(req, res) {
       const userDoc = await db.collection('users').doc(user.uid).get();
       isPremium = userDoc.exists && userDoc.data().premium === true;
     } catch (err) {
-      // User not logged in - continue
+      // User not logged in - continue without premium status
+      console.log('User not authenticated, showing public therapists');
     }
     
     // Get all therapists

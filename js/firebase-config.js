@@ -1,5 +1,6 @@
+// firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -18,3 +19,6 @@ export const provider = new GoogleAuthProvider();
 
 provider.addScope('https://www.googleapis.com/auth/calendar.events');
 provider.setCustomParameters({ prompt: 'select_account' });
+
+// Store auth instance globally for sign out
+window.firebaseAuth = auth;
