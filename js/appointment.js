@@ -564,14 +564,16 @@ function setupBookingForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!selectedSlot) {
+    // 1. Validation: Ensure a slot is actually picked
+    if (!selectedSlot || !selectedTherapist) {
       if (message) {
-        message.textContent = "❌ Please select a time slot first.";
+        message.textContent = "❌ Please select a therapist and a time slot first.";
         message.style.color = "red";
       }
       return;
     }
 
+    // 2. Auth Check: Ensure token exists
     const idToken = localStorage.getItem("mindmate_id_token");
     if (!idToken) {
       if (message) {
@@ -582,9 +584,16 @@ function setupBookingForm() {
     }
 
     const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+
+    // 3. UI Lock: Disable button immediately to prevent double-booking (409 errors)
     submitBtn.disabled = true;
     submitBtn.textContent = "Booking...";
-    if (message) message.textContent = "📅 Confirming your appointment...";
+    
+    if (message) {
+      message.textContent = "📅 Confirming your appointment...";
+      message.style.color = "#555"; // Neutral color during processing
+    }
 
     const body = {
       fullname: form.fullname.value,
@@ -611,30 +620,42 @@ function setupBookingForm() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Booking failed");
+      // Handle specific HTTP errors
+      if (!res.ok) {
+        if (res.status === 409) {
+          throw new Error("This slot was just booked by someone else. Please pick another.");
+        }
+        throw new Error(data.error || "Booking failed");
+      }
 
+      // 4. Success Execution
       if (message) {
-        message.innerHTML = `✅ ${data.message}<br><small>Check your email for confirmation.</small>`;
+        message.innerHTML = `✅ ${data.message || 'Appointment Confirmed!'}<br><small>A confirmation email has been sent.</small>`;
         message.style.color = "green";
       }
 
+      // Reset form and clear UI selections
       form.reset();
       selectedSlot = null;
-
-      if (selectedTherapist) {
-        await loadSlots(selectedTherapist.id);
-      }
-
       document.querySelectorAll(".time-slot").forEach(s => s.classList.remove("selected"));
 
+      // 5. Refresh Available Slots (Don't await this, let it happen in background)
+      loadSlots(selectedTherapist.id).catch(err => console.error("Error refreshing slots:", err));
+
+      // Success: Change button text but keep it disabled to prevent a duplicate second booking
+      submitBtn.textContent = "Booked!";
+      
     } catch (err) {
+      // 6. Error Handling
+      console.error("Booking Error:", err);
       if (message) {
         message.textContent = `❌ ${err.message}`;
         message.style.color = "red";
       }
-    } finally {
+      
+      // Re-enable button ONLY on error so the user can try again
       submitBtn.disabled = false;
-      submitBtn.textContent = "Book Appointment";
+      submitBtn.textContent = originalBtnText;
     }
   });
 }
