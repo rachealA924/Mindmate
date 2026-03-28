@@ -1,5 +1,3 @@
-// appointment.js - Complete version with Firebase Auth
-// Production configuration
 const API_BASE = window.location.origin;
 
 console.log('========================================');
@@ -13,6 +11,7 @@ let selectedSlot = null;
 let currentUser = null;
 let firebaseAuth = null;
 let isInitializing = false;
+let isVerifying = false; // FIX 3: Add verification lock
 
 // Import Firebase dynamically
 async function initFirebase() {
@@ -68,8 +67,16 @@ async function initFirebase() {
   }
 }
 
-// Handle Firebase user after sign in
+// FIX 3: Add verification lock to prevent race conditions
 async function handleFirebaseUser(user, idToken) {
+  // Prevent multiple simultaneous verifications
+  if (isVerifying) {
+    console.log("⚠️ Verification already in progress, skipping...");
+    return;
+  }
+  
+  isVerifying = true;
+  
   try {
     const message = document.getElementById("booking-message");
     if (message) {
@@ -85,9 +92,10 @@ async function handleFirebaseUser(user, idToken) {
       mode: 'cors',
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "Authorization": `Bearer ${idToken}` // FIX 2: Add Authorization header
       },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken }) // FIX 1: Use the parameter name
     });
 
     console.log(`📥 Response status: ${verifyRes.status}`);
@@ -164,6 +172,8 @@ async function handleFirebaseUser(user, idToken) {
     // Show fallback button
     const fallback = document.getElementById("firebase-auth-fallback");
     if (fallback) fallback.style.display = "block";
+  } finally {
+    isVerifying = false;
   }
 }
 
@@ -215,6 +225,12 @@ async function signInWithFirebase() {
 
 // Google One-Tap Sign-In callback
 window.handleCredentialResponse = async (response) => {
+  // FIX 3: Add verification lock
+  if (isVerifying) {
+    console.log("⚠️ Verification already in progress, skipping...");
+    return;
+  }
+  
   try {
     console.log("🔐 Google One-Tap response received");
 
@@ -237,9 +253,10 @@ window.handleCredentialResponse = async (response) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${firebaseIdToken}` // Matches your middleware
+        "Authorization": `Bearer ${firebaseIdToken}`, // FIX 2 & FIX 1: Use correct variable
+        "Accept": "application/json"
       },
-      body: JSON.stringify({ idToken: firebaseIdToken })
+      body: JSON.stringify({ idToken: firebaseIdToken }) // FIX 1: Use consistent variable name
     });
 
     console.log(`📥 Response status: ${verifyRes.status}`);
@@ -260,7 +277,7 @@ window.handleCredentialResponse = async (response) => {
     console.log("✅ Verification successful:", data.user.email);
 
     // Store user data
-    localStorage.setItem("mindmate_id_token", data.token || idToken);
+    localStorage.setItem("mindmate_id_token", data.token || firebaseIdToken);
     localStorage.setItem("mindmate_user", data.user.email);
     localStorage.setItem("mindmate_user_name", data.user.name);
     localStorage.setItem("mindmate_user_data", JSON.stringify(data.user));
@@ -290,6 +307,7 @@ window.handleCredentialResponse = async (response) => {
       });
     }
 
+    const message = document.getElementById("booking-message");
     if (message) {
       message.textContent = `✅ Welcome ${data.user.name || data.user.email}!`;
       message.style.color = "green";
