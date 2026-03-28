@@ -38,7 +38,7 @@ async function initFirebase() {
 
     const app = firebaseAppModule.initializeApp(firebaseConfig);
     firebaseAuth = firebaseAuthModule.getAuth(app);
-    
+
     // Store auth instance globally
     window.firebaseAuth = firebaseAuth;
     window.firebaseInitialized = true;
@@ -214,28 +214,32 @@ async function signInWithFirebase() {
 }
 
 // Google One-Tap Sign-In callback
-window.handleCredentialResponse = async function (response) {
-  console.log("🔐 Google One-Tap response received");
-
+window.handleCredentialResponse = async (response) => {
   try {
-    const idToken = response.credential;
+    console.log("🔐 Google One-Tap response received");
 
-    const message = document.getElementById("booking-message");
-    if (message) {
-      message.textContent = "🔐 Verifying your sign-in...";
-      message.style.color = "blue";
-    }
+    // 1. Import Firebase Auth modules if not already loaded
+    const { GoogleAuthProvider, signInWithCredential } = await import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js');
 
-    console.log(`📡 Verifying token with: ${API_BASE}/api/auth/verify`);
+    // 2. Create a Firebase credential from the Google ID Token
+    const credential = GoogleAuthProvider.credential(response.credential);
 
+    // 3. Sign into Firebase with that credential
+    console.log("🔥 Exchanging Google token for Firebase session...");
+    const userCredential = await signInWithCredential(firebaseAuth, credential);
+    const firebaseUser = userCredential.user;
+
+    // 4. Get the ACTUAL Firebase ID Token
+    const firebaseIdToken = await firebaseUser.getIdToken();
+
+    console.log("📡 Verifying Firebase token with backend...");
     const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, {
       method: "POST",
-      mode: 'cors',
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json"
+        "Authorization": `Bearer ${firebaseIdToken}` // Matches your middleware
       },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken: firebaseIdToken })
     });
 
     console.log(`📥 Response status: ${verifyRes.status}`);
@@ -668,17 +672,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Initialize Firebase for sign-in
     await initFirebase();
-    
+
     // Only initialize Google Sign-In if we're on a valid domain
     const allowedDomains = ['mindmate-sum.vercel.app', 'mindmate-navy.vercel.app', 'mindmate.vercel.app'];
     const currentHost = window.location.hostname;
-    
+
     if (allowedDomains.includes(currentHost) || currentHost === 'localhost') {
       initGoogleSignIn();
     } else {
       console.warn(`⚠️ Domain ${currentHost} not in allowed list for One-Tap. Using fallback only.`);
     }
-    
+
     setupFallbackSignIn();
 
     const therapistSelector = document.querySelector(".therapist-selector");
