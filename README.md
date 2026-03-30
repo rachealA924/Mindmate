@@ -1,120 +1,143 @@
-﻿/////////////////////////
-MINDMATE – MENTAL HEALTH SUPPORT APP
+﻿# MINDMATE – MENTAL HEALTH SUPPORT APP
 
-TABLE OF CONTENTS
+## TABLE OF CONTENTS
 1. Overview
 2. Features
 3. Demo
 4. Technologies Used
 5. API Integration
 6. Local Development Setup
-7. Deployment (Prerequisites, Web Server Configuration, Load Balancer Setup)
-8. Challenges and Solutions
-9. Credits and Acknowledgments
+7. Deployment
+8. Project Structure
+9. Challenges and Solutions
+10. Credits and Acknowledgments
 
-  1. OVERVIEW
+## 1. OVERVIEW
 MindMate is an interactive mental health support web application designed to help users assess their emotional state, schedule therapy sessions, and access motivational content.
 
 By integrating multiple APIs, the app provides sentiment analysis of user inputs, motivational quotes, and a seamless appointment booking system using Google Calendar.
 
-Important Disclaimer: This application is for educational purposes only and should not replace professional mental health services. Always seek qualified help for serious mental health concerns.
+**Important Disclaimer:** This application is for educational purposes only and should not replace professional mental health services. Always seek qualified help for serious mental health concerns.
 
-  2. FEATURES
-    2.1 Mood & Sentiment Check Tool: Users type their feelings, and the app runs a sentiment analysis via Text Analysis API, Hugging Face API, and OpenAI for deeper insights.
-    2.2 Appointment Booking System: Integrated with Google Calendar API to schedule sessions with therapists directly.
-    2.3 Motivational Quotes API: Fetches daily motivational and wellness quotes for encouragement.
-    2.4 Light/Dark Mode Toggle: Accessibility-friendly theme switcher.
-    2.5 Responsive Design: Mobile-first design to ensure smooth access across devices.
+## 2. FEATURES
+- **2.1 Mood & Sentiment Check Tool:** Users type their feelings, and the app runs a sentiment analysis via Text Analysis API, Hugging Face API, and OpenAI for deeper insights.
+- **2.2 Appointment Booking System:** Integrated with Google Calendar API to schedule sessions with therapists directly.
+- **2.3 Motivational Quotes API:** Fetches daily motivational and wellness quotes for encouragement.
+- **2.4 Light/Dark Mode Toggle:** Accessibility-friendly theme switcher.
+- **2.5 Responsive Design:** Mobile-first design to ensure smooth access across devices.
 
-  3. DEMO
-A link to a demo video (demonstrating how to use application locally and how to access it online) : If it fails to play copy the link manually and run it in a new tab:
-🎥 Demo Video Link: [https://www.canva.com/design/DAGvADjOAjg/hNuptDNknwl1qEHaSd2DvA/watch?utm_content=DAGvADjOAjg& utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5eb076e113]
+## 3. DEMO
+A link to a demo video (demonstrating how to use application locally and how to access it online): If it fails to play, copy the link manually and run it in a new tab:
+- 🎥 Demo Video Link: 
+- 🌐 Live Mindmate App: https://mindmate-navy.vercel.app/ 
 
-🌐 Live Mindmate App via Load Balancer: [http://13.221.147.237/]
+## 4. TECHNOLOGIES USED
+### 4.1 Frontend:
+- HTML (page structure)
+- CSS (styling & animations)
+- JavaScript (API calls, sentiment processing, booking logic)
 
-  4. TECHNOLOGIES USED
-    4.1 Frontend:
-      HTML (page structure)
-      CSS (styling & animations)
-      JavaScript (API calls, sentiment processing, booking logic)
-    4.2 API Integrations:
-      Zen Quotes API (Rapid API)
-      Text Analysis API
-      Hugging Face API (basic sentiment)
-      Sentiment Analysis API (REST-based)
-      OpenAI API (for conversational and emotional analysis)
-      Google Calendar API (for therapist bookings)
-    4.3 Deployment:
-      NGINX on Web01 [http://54.173.195.177/] and Web02 [http://54.88.233.154/]
-      NGINX Load Balancer (Lb01)
+### 4.2 API Integrations:
+- Zen Quotes API (Rapid API)
+- Text Analysis API
+- Hugging Face API (basic sentiment)
+- Sentiment Analysis API (REST-based)
+- OpenAI API (for conversational and emotional analysis)
+- Google Calendar API (for therapist bookings)
 
-  5. API INTEGRATION
+## 5. API INTEGRATION
 The application integrates multiple APIs to provide rich features:
 
-✅ Text Analysis API – https://textanalysisapi.com/
-Used for processing user text and extracting sentiment tone.
+- Text Analysis API – https://textanalysisapi.com/ Used for processing user text and extracting sentiment tone.
+- Sentiment Analysis API – https://rapidapi.com/twinword/api/sentiment-analysis Provides a REST endpoint for positive/neutral/negative sentiment detection.
+- Hugging Face API – https://huggingface.co/inference-api Offers deeper NLP analysis and contextual understanding.
+- OpenAI API – https://platform.openai.com/docs/ Used for generating empathetic responses and natural language insights.
+- Google Calendar API – https://developers.google.com/calendar Enables booking and managing therapy sessions within the app.
+- ZenQuotes API – https://zenquotes.io/ Supplies motivational quotes displayed in the app.
 
-✅ Sentiment Analysis API – https://rapidapi.com/twinword/api/sentiment-analysis
-Provides a REST endpoint for positive/neutral/negative sentiment detection.
-
-✅ Hugging Face API – https://huggingface.co/inference-api
-Offers deeper NLP analysis and contextual understanding.
-
-✅ OpenAI API – https://platform.openai.com/docs/
-Used for generating empathetic responses and natural language insights.
-
-✅ Google Calendar API – https://developers.google.com/calendar
-Enables booking and managing therapy sessions within the app.
-
-✅ ZenQuotes API – https://zenquotes.io/
-Supplies motivational quotes displayed in the app.
-
-  6. LOCAL DEVELOPMENT SETUP
+## 6. LOCAL DEVELOPMENT SETUP
 Follow these steps to run MindMate locally:
 
-Step 1:
-Clone the repo:
-Mindmate by; git clone https://github.com/rachealA924/Mindmate.git
+### Prerequisites
+- Node.js 18+ installed
+- npm (comes with Node.js)
+- Git installed
+- Internet connection (required for API calls and Google auth)
 
-Step 2:
-Open the project: You can simply open the index.html file in your browser as this is a purely front-end application
+### Step-by-step run locally
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/rachealA924/Mindmate.git
+   cd Mindmate
+   ```
 
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-  7. DEPLOYMENT
-    7.1 Prerequisites
+3. **Ensure Firebase service account key is present (if required):**
+   - File: `service-account-key.json`
+   - This repository includes a file placeholder.
 
-Two web servers:
-Web-01 and Web-02 (where nginx is installed, and I configured /etc/nginx/sites_available/default, this file is where I hosted my application for instance: I put all my files used to make application including; HTML, CSS, and JS, all were put inside this /var/www/html so that it can be accessed by visiting the IP_Address)
-Load balancer: -Through lb-01 (where haproxy is installed to distribute the requests through those two servers. And those were done through configuring an haproxy config file ( /etc/haproxy/haproxy.cfg ), So you can access it through linking up to the IP_address of this lb-01)
-    7.2 Domain name
-A domain used, was created from DotTech domain where I was supposed to use it to link up with the IP_Address so if you vist my domain you will get the same by visiting via IP_Address but my application for the Domain was rejected in the meantime.
-    7.3 SSL certificate
-From lb-01 , I was supposed to create a certificate using certbot, issued by Letsencrypt and signed by it. So it isnt secure as it is because of the domain.
+4. **Start the server:**
+   ```bash
+   npm start
+   # or
+   node server.js
+   ```
 
-  8. CHALLENGES AND SOLUTIONS
+5. **Open the app:**
+   - Visit: `http://localhost:5000`
 
-🔴 Multiple API Rate Limits
-Challenge: Free-tier APIs imposed strict call limits.
-Solution: Implemented caching & fallback messages to reduce unnecessary API calls.
+6. **Operation checks:**
+   - Firebase login/sign-out on `appointments.html`
+   - Therapist appointment booking and cancellation
+   - Mood sentiment analysis on `index.html`
+   - Self-check assessment on `self-check.html`
 
-🔴 Google Calendar Authentication Issues
-Challenge: OAuth setup required precise redirect URIs.
-Solution: Configured correct authorized domains and tested with local + deployed servers.
+### Troubleshooting
+- If Google One-Tap is blocked, use fallback button.
+- If mood endpoint returns 429 (rate limit), wait and retry.
+- If hard reload needed, clear browser cache and re-run auth.
 
-🔴 Load Balancer Misrouting
-Challenge: Initial config caused 502 Bad Gateway errors.
-Solution: Fixed upstream IPs and reloaded NGINX successfully.
+### Alternative static preview (browser-only)
+1. Open `index.html` in Chrome.
+2. For full bookings/API, use backend server route.
 
-  9. CREDITS AND ACKNOWLEDGMENTS
+## 7. Deployment:
+- Vercel
+
+## 8. PROJECT STRUCTURE
+- `index.html`, `about.html`, `appointments.html`, `self-check.html`, etc. (pages)
+- `css/style.css` (app styles)
+- `js/main.js` (global UI behavior, theme, navigation)
+- `js/appointment.js` (auth, therapist + booking flows)
+- `js/sentiment.js` (mood analysis)
+- `js/self-check.js` (quiz and recommendations)
+- `js/calendar.js` / other js files for calendar features
+- `api/` (backend routes for auth, appointments, therapists, analysis)
+- `lib/` (middleware, firebase auth, CORS, rate-limit configs)
+- `server.js` (server entrypoint)
+- `cron/generate-slots.js` (slot generation task)
+- `service-account-key.json` (Firebase service account credentials)
+- `README.md` (project documentation)
+
+## 9. CHALLENGES AND SOLUTIONS
+- 🔴 Multiple API Rate Limits Challenge: Free-tier APIs imposed strict call limits. Solution: Implemented caching & fallback messages to reduce unnecessary API calls.
+- 🔴 Google Calendar Authentication Issues Challenge: OAuth setup required precise redirect URIs. Solution: Configured correct authorized domains and tested with local + deployed servers.
+
+## 10. CREDITS AND ACKNOWLEDGMENTS
 APIs Used:
-Text Analysis API – https://textanalysisapi.com/
-Sentiment Analysis API – https://rapidapi.com/twinword/api/sentiment-analysis
-Hugging Face API – https://huggingface.co/inference-api
-OpenAI API – https://platform.openai.com/docs/
-Google Calendar API – https://developers.google.com/calendar
-ZenQuotes API – https://zenquotes.io/
+- Text Analysis API – https://textanalysisapi.com/
+- Sentiment Analysis API – https://rapidapi.com/twinword/api/sentiment-analysis
+- Hugging Face API – https://huggingface.co/inference-api
+- OpenAI API – https://platform.openai.com/docs/
+- Google Calendar API – https://developers.google.com/calendar
+- ZenQuotes API – https://zenquotes.io/
 
 Special thanks to:
-API developers for free-tier access.
-NGINX for handling deployment & load balancing.
-Certbot/LetsEncrypt for SSL certificates.
+- API developers for free-tier access.
+
+
+
