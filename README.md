@@ -28,7 +28,7 @@ By integrating multiple APIs, the app provides sentiment analysis of user inputs
 
 ## 3. DEMO
 A link to a demo video (demonstrating how to use application locally and how to access it online): If it fails to play, copy the link manually and run it in a new tab:
-- 🎥 Demo Video Link: 
+- 🎥 Demo Video Link: https://drive.google.com/file/d/19uQgg_vEORXGL2zzT5xPVD4F5cxYHKQh/view?usp=sharing
 - 🌐 Live Mindmate App: https://mindmate-navy.vercel.app/ 
 
 ## 4. TECHNOLOGIES USED
@@ -106,7 +106,7 @@ Follow these steps to run MindMate locally:
 2. For full bookings/API, use backend server route.
 
 ## 7. Deployment:
-- Vercel
+- Vercel: https://mindmate-navy.vercel.app/ 
 
 ## 8. PROJECT STRUCTURE
 - `index.html`, `about.html`, `appointments.html`, `self-check.html`, etc. (pages)
